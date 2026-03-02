@@ -15,6 +15,7 @@
     background: #121212;
     color: #fff;
     padding: 10px;
+    font-size: 18px;
   }
   .container {
     max-width: 1200px;
@@ -31,29 +32,29 @@
   .header {
     text-align: center;
     color: #ff69b4;
-    font-size: 20px;
+    font-size: 24px;
     margin-bottom: 15px;
   }
   .panel {
     background: #1e1e1e;
     border-radius: 12px;
-    padding: 15px;
+    padding: 18px;
   }
   .section {
-    margin-bottom: 15px;
+    margin-bottom: 18px;
   }
   .section label {
     display: block;
     margin-bottom: 6px;
     color: #ccc;
-    font-size: 14px;
+    font-size: 18px;
   }
   .btn {
     width: 100%;
-    padding: 12px;
+    padding: 14px;
     border: none;
     border-radius: 8px;
-    font-size: 16px;
+    font-size: 18px;
     font-weight: bold;
     cursor: pointer;
     margin-top: 8px;
@@ -65,22 +66,21 @@
   .btn-pink:hover {
     background: #ff85c2;
   }
-  select,
-  input,
-  textarea {
+  select, input, textarea {
     width: 100%;
-    padding: 10px;
+    padding: 12px;
     border-radius: 6px;
     border: none;
     background: #2a2a2a;
     color: #fff;
-    margin-top: 4px;
+    margin-top: 6px;
+    font-size: 18px;
   }
   .winner-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin-top: 12px;
+    gap: 12px;
+    margin-top: 14px;
   }
   @media (max-width: 768px) {
     .winner-grid {
@@ -90,199 +90,219 @@
   .winner-card {
     background: #2a2a2a;
     border-radius: 8px;
-    padding: 10px;
-    font-size: 13px;
+    padding: 14px;
+    font-size: 18px;
   }
   .winner-card .title {
     color: #ff69b4;
     font-weight: bold;
-    margin-bottom: 6px;
+    margin-bottom: 8px;
+    font-size: 19px;
   }
   .winner-card .uid,
   .winner-card .uname,
-  .winner-card .comment {
-    margin: 4px 0;
+  .winner-card .comment,
+  .winner-card .ctime {
+    margin: 6px 0;
     color: #ddd;
   }
   .footer {
     text-align: center;
-    margin-top: 15px;
+    margin-top: 18px;
     color: #888;
-    font-size: 13px;
+    font-size: 18px;
   }
   .toggle-group {
     display: flex;
     gap: 10px;
   }
   .toggle-btn {
-    padding: 6px 12px;
+    padding: 10px 14px;
     border-radius: 6px;
     background: #2a2a2a;
     cursor: pointer;
-    font-size: 13px;
+    font-size: 18px;
   }
   .toggle-btn.active {
     background: #ff69b4;
     color: #fff;
   }
+  .time-row {
+    display: flex;
+    gap: 10px;
+  }
 </style>
 </head>
 <body>
-  <div class="header">🌸 老孫抽奖站 🌸</div>
-  <div class="container">
-    <div class="panel left">
-      <div class="section">
-        <label>1. 导入表格</label>
-        <input type="file" id="fileInput" accept=".xlsx,.xls,.csv,.xlsm" />
-        <small style="color:#888; font-size:12px">支持 xlsx, xls, csv, xlsm 等格式</small>
+
+<div class="header">🌸 老孫抽奖站 🌸</div>
+
+<div class="container">
+  <div class="panel left">
+    <div class="section">
+      <label>1. 导入表格</label>
+      <input type="file" id="fileInput" accept=".xlsx,.xls,.csv,.xlsm" />
+      <small style="color:#888; font-size:16px">表格必须包含：UID / 用户名 / 评论 / 时间 列</small>
+    </div>
+
+    <div class="section">
+      <label>2. 中奖人数</label>
+      <select id="winCount">
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="6" selected>6</option>
+        <option value="10">10</option>
+        <option value="20">20</option>
+      </select>
+    </div>
+
+    <div class="section">
+      <label>3. 是否允许 @他人</label>
+      <div class="toggle-group">
+        <div class="toggle-btn active" id="allowAtYes">允许</div>
+        <div class="toggle-btn" id="allowAtNo">禁止</div>
       </div>
-      <div class="section">
-        <label>2. 中奖人数</label>
-        <select id="winCount">
-          <option value="1">1</option>
-          <option value="2">2</option>
-          <option value="3">3</option>
-          <option value="6" selected>6</option>
-          <option value="10">10</option>
-        </select>
+    </div>
+
+    <div class="section">
+      <label>4. 重复处理</label>
+      <div class="toggle-group">
+        <div class="toggle-btn active" id="dupRemove">同一人去重</div>
+        <div class="toggle-btn" id="dupKeep">完全不去重</div>
       </div>
-      <div class="section">
-        <label>3. 是否允许 @他人</label>
-        <div class="toggle-group">
-          <div class="toggle-btn active" id="allowAtYes">允许</div>
-          <div class="toggle-btn" id="allowAtNo">禁止</div>
-        </div>
+    </div>
+
+    <div class="section">
+      <label>5. 时间筛选</label>
+      <div class="time-row">
+        <input type="datetime-local" id="timeStart">
+        <input type="datetime-local" id="timeEnd">
       </div>
-      <div class="section">
-        <label>4. 重复处理</label>
-        <div class="toggle-group">
-          <div class="toggle-btn active" id="dupRemove">同一人去重</div>
-          <div class="toggle-btn" id="dupKeep">完全不去重</div>
-        </div>
-      </div>
-      <div class="section">
-        <label>5. 评论时间筛选（列，可选）</label>
-        <select>
-          <option>留空则不限制</option>
-        </select>
-        <input type="text" placeholder="年/月/日 ----" style="width:48%; display:inline-block" />
-        <input type="text" placeholder="年/月/日 ----" style="width:48%; display:inline-block; margin-left:4%" />
-      </div>
-      <div class="section">
-        <label>6. 屏蔽词（一行一个）</label>
-        <textarea id="blockWords" rows="4">已转
+    </div>
+
+    <div class="section">
+      <label>6. 屏蔽词（一行一个）</label>
+      <textarea id="blockWords" rows="4">已转
 帮转
 点赞
 参与一下</textarea>
-      </div>
-      <button class="btn btn-pink" onclick="startLottery()">开始抽奖</button>
-      <button class="btn btn-pink" style="margin-top:10px" onclick="exportResult()">导出中奖名单</button>
     </div>
-    <div class="panel right">
-      <div style="text-align:center; color:#ff69b4; font-weight:bold; font-size:16px">🎁 中奖名单 🎁</div>
-      <div class="winner-grid" id="winnerGrid"></div>
-    </div>
+
+    <button class="btn btn-pink" onclick="startLottery()">开始抽奖</button>
+    <button class="btn btn-pink" style="margin-top:10px" onclick="exportResult()">导出中奖名单</button>
   </div>
-  <div class="footer" id="footerText">总评论：0 | 有效：0 | 中奖：0</div>
 
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script>
-    let allData = [];
-    let validData = [];
-    let winners = [];
+  <div class="panel right">
+    <div style="text-align:center; color:#ff69b4; font-weight:bold; font-size:20px">🎁 中奖名单 🎁</div>
+    <div class="winner-grid" id="winnerGrid"></div>
+  </div>
+</div>
 
-    // 从表格加载（兼容原功能）
-    document.getElementById('fileInput').addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (evt) => {
-        const bstr = evt.target.result;
-        const wb = XLSX.read(bstr, { type: 'binary' });
-        const ws = wb.Sheets[wb.SheetNames[0]];
-        allData = XLSX.utils.sheet_to_json(ws);
-        updateFooter();
-        alert("已从表格加载数据");
-      };
-      reader.readAsBinaryString(file);
-    });
+<div class="footer" id="footerText">总评论：0 | 有效：0 | 中奖：0</div>
 
-    // 更新底部统计
-    function updateFooter() {
-      const blockWords = document.getElementById('blockWords').value
-        .split('\n').map(w => w.trim()).filter(Boolean);
-      validData = allData.filter(row => {
-        const comment = row.评论 || row.comment || '';
-        return !blockWords.some(w => comment.includes(w));
-      });
-      const winCount = parseInt(document.getElementById('winCount').value);
-      document.getElementById('footerText').textContent =
-        `总评论：${allData.length} | 有效：${validData.length} | 中奖：${winCount}`;
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+let allData = [];
+let validData = [];
+let winners = [];
+
+document.getElementById('fileInput').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (evt) => {
+    const wb = XLSX.read(evt.target.result, { type: 'binary' });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    allData = XLSX.utils.sheet_to_json(ws);
+    updateFooter();
+    alert("已加载表格");
+  };
+  reader.readAsBinaryString(file);
+});
+
+function updateFooter() {
+  const blockWords = document.getElementById('blockWords').value.split('\n').map(i=>i.trim()).filter(Boolean);
+  const allowAt = document.getElementById('allowAtYes').classList.contains('active');
+  const dupRemove = document.getElementById('dupRemove').classList.contains('active');
+  const tStart = document.getElementById('timeStart').value;
+  const tEnd = document.getElementById('timeEnd').value;
+
+  const map = new Map();
+  validData = allData.filter(row => {
+    const comment = (row.评论 || row.comment || '').toString();
+    const time = (row.时间 || row.ctime || '').toString();
+
+    if (blockWords.some(w => comment.includes(w))) return false;
+    if (!allowAt && comment.includes('@')) return false;
+    if (tStart && time < tStart) return false;
+    if (tEnd && time > tEnd) return false;
+
+    const uid = row.UID || row.uid || '';
+    if (dupRemove) {
+      if (!uid || map.has(uid)) return false;
+      map.set(uid, true);
     }
+    return true;
+  });
 
-    // 开始抽奖
-    function startLottery() {
-      if (validData.length === 0) {
-        alert("暂无有效评论");
-        return;
-      }
-      const winCount = parseInt(document.getElementById('winCount').value);
-      if (winCount > validData.length) {
-        alert("有效人数不足");
-        return;
-      }
-      // 随机抽取
-      const shuffled = [...validData].sort(() => Math.random() - 0.5);
-      winners = shuffled.slice(0, winCount);
-      renderWinners();
-    }
+  const winCount = +document.getElementById('winCount').value;
+  document.getElementById('footerText').textContent =
+    `总评论：${allData.length} | 有效：${validData.length} | 中奖：${winCount}`;
+}
 
-    // 渲染中奖名单
-    function renderWinners() {
-      const grid = document.getElementById('winnerGrid');
-      grid.innerHTML = '';
-      winners.forEach((w, i) => {
-        const card = document.createElement('div');
-        card.className = 'winner-card';
-        card.innerHTML = `
-          <div class="title">第${i+1}名</div>
-          <div class="uid">UID：${w.UID || w.uid || '-'}</div>
-          <div class="uname">用户名：${w.用户名 || w.uname || '-'}</div>
-          <div class="comment">评论：${w.评论 || w.comment || '-'}</div>
-        `;
-        grid.appendChild(card);
-      });
-    }
+function startLottery() {
+  updateFooter();
+  if (validData.length === 0) return alert("暂无有效数据");
+  const n = +document.getElementById('winCount').value;
+  if (n > validData.length) return alert("有效人数不足");
 
-    // 导出名单
-    function exportResult() {
-      if (winners.length === 0) {
-        alert("暂无中奖名单");
-        return;
-      }
-      const ws = XLSX.utils.json_to_sheet(winners);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "中奖名单");
-      XLSX.writeFile(wb, "老孫抽奖站_中奖名单.xlsx");
-    }
+  const shuffled = [...validData].sort(() => Math.random() - 0.5);
+  winners = shuffled.slice(0, n);
+  render();
+}
 
-    // 切换按钮状态
-    document.getElementById('allowAtYes').addEventListener('click', () => {
-      document.getElementById('allowAtYes').classList.add('active');
-      document.getElementById('allowAtNo').classList.remove('active');
-    });
-    document.getElementById('allowAtNo').addEventListener('click', () => {
-      document.getElementById('allowAtNo').classList.add('active');
-      document.getElementById('allowAtYes').classList.remove('active');
-    });
-    document.getElementById('dupRemove').addEventListener('click', () => {
-      document.getElementById('dupRemove').classList.add('active');
-      document.getElementById('dupKeep').classList.remove('active');
-    });
-    document.getElementById('dupKeep').addEventListener('click', () => {
-      document.getElementById('dupKeep').classList.add('active');
-      document.getElementById('dupRemove').classList.remove('active');
-    });
-  </script>
+function render() {
+  const grid = document.getElementById('winnerGrid');
+  grid.innerHTML = '';
+  winners.forEach((w, i) => {
+    const card = document.createElement('div');
+    card.className = 'winner-card';
+    card.innerHTML = `
+      <div class="title">第${i+1}名</div>
+      <div class="uid">UID：${w.UID || w.uid || '-'}</div>
+      <div class="uname">用户名：${w.用户名 || w.uname || '-'}</div>
+      <div class="comment">评论：${w.评论 || w.comment || '-'}</div>
+      <div class="ctime">时间：${w.时间 || w.ctime || '-'}</div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function exportResult() {
+  if (winners.length === 0) return alert("暂无中奖名单");
+  const ws = XLSX.utils.json_to_sheet(winners);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "中奖名单");
+  XLSX.writeFile(wb, "老孫抽奖站_中奖名单.xlsx");
+}
+
+document.getElementById('allowAtYes').onclick = () => {
+  document.getElementById('allowAtYes').classList.add('active');
+  document.getElementById('allowAtNo').classList.remove('active');
+};
+document.getElementById('allowAtNo').onclick = () => {
+  document.getElementById('allowAtNo').classList.add('active');
+  document.getElementById('allowAtYes').classList.remove('active');
+};
+document.getElementById('dupRemove').onclick = () => {
+  document.getElementById('dupRemove').classList.add('active');
+  document.getElementById('dupKeep').classList.remove('active');
+};
+document.getElementById('dupKeep').onclick = () => {
+  document.getElementById('dupKeep').classList.add('active');
+  document.getElementById('dupRemove').classList.remove('active');
+};
+</script>
 </body>
 </html>
