@@ -1,187 +1,207 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🌸老孫抽奖站🌸</title>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<title>B站评论抽奖工具</title>
+
 <style>
-*{box-sizing:border-box;font-family:"微软雅黑", "圆幼体", sans-serif}
-body{margin:0;padding:12px;background:#000;color:#fff}
-.container{width:100%;max-width:1400px;margin:0 auto}
-.title-bar{text-align:center;padding:8px 0}
-h1{font-size:32px;color:#fb7299;margin:0;font-weight:bold}
-.main-content{display:flex;gap:12px;margin-top:10px}
-.left-card{flex:1;background:#1a1a1a;border-radius:14px;padding:16px;}
-.right-card{flex:1;background:#1a1a1a;border-radius:14px;padding:16px;}
-h3{font-size:20px;margin:0 0 12px;text-align:center}
-.label{font-size:16px;font-weight:normal;margin:6px 0 3px}
-.tip{font-size:14px;color:#aaa;margin:2px 0}
-input,select,textarea{width:100%;padding:8px;border:1px solid #333;border-radius:8px;font-size:16px;background:#2c2c2c;color:#fff;margin-bottom:4px}
-textarea{height:80px;resize:none}
-.btn{width:100%;background:#fb7299;color:white;border:none;padding:10px;border-radius:8px;margin:6px 0;font-size:16px}
-.btn:disabled{background:#333}
-.radio-group{display:flex;gap:10px;margin:4px 0;font-size:16px}
-.result{
-  background:#2c2c2c;
-  padding:12px;
-  border-radius:10px;
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:12px;
-  height: 70vh;
-  overflow-y: auto;
+body{
+    margin:0;
+    padding:15px;
+    background:#f2f2f2;
+    font-family:sans-serif;
 }
-.winner-card{background:#333;border-radius:8px;padding:10px}
-.winner-card h4{margin:0 0 8px;color:#fb7299;font-size:18px}
-.winner-info{font-size:14px;line-height:1.4;margin:4px 0}
-.empty-state{grid-column:1/-1;text-align:center;padding:20px;color:#aaa;font-size:16px}
-.stats{font-size:14px;color:#aaa;margin-top:6px}
-.time-filter{display:flex;gap:8px;margin:4px 0}
-.time-filter input{flex:1;padding:8px}
+
+.container{
+    max-width:900px;
+    margin:auto;
+    background:white;
+    padding:20px;
+    border-radius:14px;
+    box-shadow:0 4px 12px rgba(0,0,0,0.08);
+}
+
+h2{
+    text-align:center;
+}
+
+input,button{
+    width:100%;
+    padding:12px;
+    margin-top:10px;
+    border-radius:8px;
+    border:1px solid #ddd;
+    font-size:16px;
+}
+
+button{
+    background:#ff6a9c;
+    color:white;
+    border:none;
+}
+
+button:active{
+    transform:scale(0.97);
+}
+
+.result{
+    margin-top:15px;
+    padding:10px;
+    background:#fafafa;
+    border-radius:8px;
+    white-space:pre-line;
+}
+
+.small{
+    font-size:13px;
+    color:#666;
+}
 </style>
 </head>
+
 <body>
+
 <div class="container">
-  <div class="title-bar">
-    <h1>🌸老孫抽奖站🌸</h1>
-  </div>
+<h2>评论区抽奖</h2>
 
-  <div class="main-content">
-    <div class="left-card">
-      <div class="label">1. 导入表格</div>
-      <div class="tip">支持 xlsx、xls、csv、xlsm 等格式</div>
-      <input type="file" id="file" accept=".xlsx,.xls,.csv,.xlsm,.xlsb,.xltx,.xltm">
+<input id="url" placeholder="粘贴B站链接（视频 / 动态 / 短链）">
 
-      <div class="label">2. 中奖人数</div>
-      <select id="count">
-        <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
-        <option>6</option><option>7</option><option>8</option><option>9</option><option>10</option>
-        <option>11</option><option>12</option><option>13</option><option>14</option><option>15</option>
-        <option>16</option><option>17</option><option>18</option><option>19</option><option>20</option>
-      </select>
+<input id="count" type="number" value="1" placeholder="抽几人">
 
-      <div class="label">3. 是否允许 @他人</div>
-      <div class="radio-group">
-        <label><input type="radio" name="at" value="allow" checked> 允许</label>
-        <label><input type="radio" name="at" value="forbid"> 禁止</label>
-      </div>
+<input id="ban" placeholder="屏蔽词（逗号分隔）">
 
-      <div class="label">4. 重复处理</div>
-      <div class="radio-group">
-        <label><input type="radio" name="repeat" value="dedupe" checked> 同一人去重</label>
-        <label><input type="radio" name="repeat" value="keep"> 完全不去重</label>
-      </div>
+<button onclick="startLoad()">读取评论</button>
+<button onclick="draw()">开始抽奖</button>
 
-      <div class="label">5. 评论时间筛选（I列，可选）</div>
-      <div class="tip">留空则不限制</div>
-      <div class="time-filter">
-        <input type="datetime-local" id="startTime" placeholder="起始时间">
-        <input type="datetime-local" id="endTime" placeholder="结束时间">
-      </div>
-
-      <div class="label">6. 屏蔽词（一行一个）</div>
-      <textarea id="block" placeholder="例如：转发、刷楼、机器人"></textarea>
-
-      <button class="btn" id="start" disabled>开始抽奖</button>
-      <button class="btn" id="export">导出中奖名单</button>
-      <div class="stats" id="info"></div>
-    </div>
-
-    <div class="right-card">
-      <h3>🎯 中奖名单</h3>
-      <div class="result" id="result">
-        <div class="empty-state">点击「开始抽奖」生成中奖名单</div>
-      </div>
-    </div>
-  </div>
+<div class="result" id="status"></div>
+<div class="small">支持 BV / av / b23.tv / 动态链接</div>
 </div>
 
 <script>
-let rows = [];
-let win = [];
-let head = [];
+let comments = [];
+let oid = null;
+let type = 1;
 
-document.getElementById('file').onchange = e => {
-  const f = new FileReader();
-  f.onload = e => {
-    const wb = XLSX.read(e.target.result);
-    const data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1});
-    if(data.length>0){ head=data[0]; rows=data.slice(1).filter(i=>i.join('').trim()) }
-    document.getElementById('start').disabled = false;
-    alert(`导入成功：${rows.length} 条`);
-  };
-  f.readAsArrayBuffer(e.target.files[0]);
-};
+// 展开短链
+async function expandShortUrl(url){
+    let res = await fetch(url,{method:"HEAD",redirect:"follow"});
+    return res.url;
+}
 
-document.getElementById('start').onclick = () => {
-  const num = +document.getElementById('count').value;
-  const at = document.querySelector('input[name="at"]:checked').value;
-  const dedupe = document.querySelector('input[name="repeat"]:checked').value;
-  const blocks = document.getElementById('block').value.split('\n').map(i=>i.trim().toLowerCase()).filter(Boolean);
-  const startTime = document.getElementById('startTime').value ? new Date(document.getElementById('startTime').value) : null;
-  const endTime = document.getElementById('endTime').value ? new Date(document.getElementById('endTime').value) : null;
+function getBV(url){
+    let m = url.match(/BV\w+/);
+    return m ? m[0] : null;
+}
 
-  let pool = rows.filter(r => {
-    const t = r.join('').toLowerCase();
-    if(at === 'forbid' && t.includes('@')) return false;
-    if(blocks.some(b => t.includes(b))) return false;
+function getAV(url){
+    let m = url.match(/av(\d+)/);
+    return m ? m[1] : null;
+}
 
-    const commentTime = new Date(r[8]);
-    if (startTime && commentTime < startTime) return false;
-    if (endTime && commentTime > endTime) return false;
+function getDynamicId(url){
+    let m = url.match(/t\.bilibili\.com\/(\d+)/);
+    return m ? m[1] : null;
+}
 
-    return true;
-  });
+async function bvToAid(bv){
+    let api = `https://api.bilibili.com/x/web-interface/view?bvid=${bv}`;
+    let res = await fetch(api);
+    let data = await res.json();
+    return data.data.aid;
+}
 
-  if(dedupe === 'dedupe'){
-    const uidSet = new Set();
-    pool = pool.filter(row => {
-      const uid = row[2];
-      if(uidSet.has(uid)) return false;
-      uidSet.add(uid);
-      return true;
+async function startLoad(){
+    let url = document.getElementById("url").value.trim();
+
+    if(url.includes("b23.tv")){
+        url = await expandShortUrl(url);
+    }
+
+    let dynamicId = getDynamicId(url);
+    let av = getAV(url);
+    let bv = getBV(url);
+
+    if(dynamicId){
+        oid = dynamicId;
+        type = 11;
+    }
+    else if(av){
+        oid = av;
+        type = 1;
+    }
+    else if(bv){
+        oid = await bvToAid(bv);
+        type = 1;
+    }
+    else{
+        alert("无法识别链接");
+        return;
+    }
+
+    loadComments();
+}
+
+async function loadComments(){
+    comments = [];
+    document.getElementById("status").innerText="正在读取评论...";
+
+    let page = 1;
+
+    while(page <= 10){
+        let api = `https://api.bilibili.com/x/v2/reply?type=${type}&oid=${oid}&pn=${page}`;
+        let res = await fetch(api);
+        let data = await res.json();
+
+        if(data.data && data.data.replies){
+            data.data.replies.forEach(r=>{
+                comments.push({
+                    user:r.member.uname,
+                    text:r.content.message
+                });
+            });
+        }
+
+        page++;
+    }
+
+    document.getElementById("status").innerText =
+        "读取完成，共 " + comments.length + " 条评论";
+}
+
+// 去重用户
+function uniqueUsers(list){
+    let map = new Map();
+    list.forEach(i=>{
+        if(!map.has(i.user)){
+            map.set(i.user,i);
+        }
     });
-  }
+    return Array.from(map.values());
+}
 
-  if(pool.length < num) return alert(`有效人数不足 ${num}（当前有效：${pool.length}）`);
+function draw(){
+    let ban = document.getElementById("ban").value.split(",");
+    let count = parseInt(document.getElementById("count").value);
 
-  pool.sort(()=>Math.random()-0.5);
-  win = pool.slice(0,num);
+    let list = comments.filter(c=>{
+        return !ban.some(b=>b && c.text.includes(b));
+    });
 
-  const leftWinners = win.slice(0, Math.ceil(num/2));
-  const rightWinners = win.slice(Math.ceil(num/2), 20);
-  const sortedWinners = [];
-  const maxLen = Math.max(leftWinners.length, rightWinners.length);
-  for(let i=0;i<maxLen;i++){
-    if(leftWinners[i]) sortedWinners.push(leftWinners[i]);
-    if(rightWinners[i]) sortedWinners.push(rightWinners[i]);
-  }
+    list = uniqueUsers(list);
 
-  document.getElementById('result').innerHTML = sortedWinners.length 
-    ? sortedWinners.map((w, index) => {
-        const realRank = win.indexOf(w) + 1;
-        return `
-          <div class="winner-card">
-            <h4>🎊 第${realRank}名</h4>
-            <div class="winner-info">UID：${w[2]}</div>
-            <div class="winner-info">用户名：${w[4] || '无'}</div>
-            <div class="winner-info">评论：${w[7] || '无'}</div>
-          </div>
-        `;
-      }).join('')
-    : '<div class="empty-state">暂无中奖名单</div>';
+    let winners = [];
 
-  document.getElementById('info').innerText = `总评论：${rows.length}｜有效：${pool.length}｜中奖：${num}`;
-};
+    for(let i=0;i<count && list.length>0;i++){
+        let index = Math.floor(Math.random()*list.length);
+        winners.push(list.splice(index,1)[0]);
+    }
 
-document.getElementById('export').onclick = () => {
-  if(!win.length)return alert('请先抽奖');
-  const ws = XLSX.utils.aoa_to_sheet([head,...win]);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,'中奖名单');
-  XLSX.writeFile(wb,'老孫抽奖站_中奖名单.xlsx');
-};
+    document.getElementById("status").innerText =
+        "🎉中奖名单：\n\n" +
+        winners.map(w=>w.user + " ： " + w.text).join("\n\n");
+}
 </script>
+
 </body>
 </html>
