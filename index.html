@@ -4,118 +4,124 @@
 <meta charset="UTF-8">
 <title>老孙抽奖工具</title>
 <style>
-  *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,Roboto}
-  body{background:#121212;color:#fff;padding:20px;max-width:900px;margin:0 auto}
-  .card{background:#1e1e1e;border-radius:14px;padding:20px;margin-bottom:16px}
-  input,textarea,button{width:100%;padding:12px;border-radius:10px;border:none;margin-top:8px;font-size:15px}
-  input,textarea{background:#242424;color:#fff}
-  button{background:#e63946;font-weight:bold;cursor:pointer}
+  *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,sans-serif}
+  body{background:#111;color:#fff;padding:20px;max-width:900px;margin:0 auto}
+  .panel{background:#1a1a1a;padding:16px 20px;border-radius:12px;margin-bottom:14px}
+  input,textarea,button{width:100%;padding:12px 14px;border-radius:8px;border:none;margin-top:8px;font-size:15px}
+  input,textarea{background:#222;color:#fff}
+  button{background:#c40c2e;color:#fff;font-weight:bold;cursor:pointer}
   button:active{transform:scale(.98)}
-  .list{max-height:380px;overflow-y:auto;margin-top:12px}
-  .item{display:flex;align-items:center;background:#242424;padding:10px;border-radius:10px;margin-bottom:10px}
-  .item img{width:44px;height:44px;border-radius:50%;margin-right:12px}
+  .comment-list{margin-top:12px;max-height:280px;overflow-y:auto}
+  .comment-item{display:flex;align-items:center;background:#222;padding:10px 12px;border-radius:8px;margin-bottom:8px}
+  .comment-item img{width:40px;height:40px;border-radius:50%;object-fit:cover;margin-right:10px}
   .name{font-weight:bold}
-  .content{color:#aaa;font-size:14px}
-  .lottery{text-align:center;margin-top:30px}
-  .lottery button{font-size:19px;padding:16px;background:#ff4470}
-  .winner{margin-top:24px;font-size:24px;color:#ffdd57}
-  .winner img{width:70px;height:70px;border-radius:50%;display:block;margin:10px auto}
+  .content{color:#ccc;font-size:14px}
+  .lottery-box{text-align:center;margin-top:30px}
+  .lottery-btn{background:#ff3366;padding:16px;font-size:18px}
+  .winner{font-size:22px;font-weight:bold;color:#ffeb3b;margin-top:20px}
+  .winner img{width:60px;height:60px;border-radius:50%}
 </style>
 </head>
 <body>
 
 <h1 style="text-align:center;margin-bottom:20px">老孙抽奖工具</h1>
 
-<div class="card">
+<div class="panel">
   <label>B站动态链接：</label>
-  <input id="url" placeholder="https://t.bilibili.com/xxxx">
+  <input type="text" id="dynamicUrl" placeholder="https://t.bilibili.com/xxx 或 b23.tv/xxx">
   <button onclick="loadComments()">加载评论</button>
 </div>
 
-<div class="card">
-  <label>屏蔽词（一行一个）：</label>
-  <textarea id="block" rows="3">转发
+<div class="panel">
+  <label>屏蔽词（一行一个，包含即过滤）：</label>
+  <textarea id="blockWords" rows="3">转发
 求中
-抽奖
-关注
 点赞</textarea>
 </div>
 
-<div class="list" id="list"></div>
+<div class="comment-list" id="commentList"></div>
 
-<div class="lottery">
-  <button onclick="lottery()">开始抽奖</button>
+<div class="lottery-box">
+  <button class="lottery-btn" onclick="startLottery()">开始抽奖</button>
   <div id="winner" class="winner"></div>
 </div>
 
 <script>
-let users = [];
+let userList = [];
 
 async function loadComments() {
-  const url = document.getElementById('url').value;
-  const match = url.match(/(\d+)\/?$/);
-  if (!match) return alert('链接不正确');
-  const oid = match[1];
+  const url = document.getElementById('dynamicUrl').value.trim();
+  const match = url.match(/(\d+)\D*$/);
+  if (!match) {
+    alert("请输入正确的B站动态链接");
+    return;
+  }
 
   try {
+    const oid = match[1];
     const api = `https://api.bilibili.com/x/polymer/web-dynamic/v1/comment/all?type=17&oid=${oid}&sort=0`;
-    const res = await fetch(api, {
-      mode: 'cors',
-      headers: { Origin: 'https://www.bilibili.com' }
-    });
-    const data = await res.json();
-    if (data.code !== 0) return alert('获取失败');
+    const resp = await fetch(api);
+    const data = await resp.json();
 
     const map = new Map();
-    data.data.items.forEach(x => {
-      const m = x.member;
-      if (!map.has(m.mid)) {
-        map.set(m.mid, {
-          uname: m.uname,
+    data.data.items.forEach(item => {
+      const m = item.member;
+      const mid = m.mid;
+      if (!map.has(mid)) {
+        map.set(mid, {
           avatar: m.avatar,
-          msg: x.content.message
+          name: m.uname,
+          content: item.content.message
         });
       }
     });
-    users = Array.from(map.values());
-    render();
-  } catch(e) {
-    alert('跨域已用无限制方案，正常可用');
-    users = [
-      {uname:'测试用户',avatar:'https://i1.hdslb.com/bfs/face/9d9ed989e2d9292d92d9.jpg',msg:'测试内容'}
-    ];
-    render();
+
+    userList = Array.from(map.values());
+    renderList();
+  } catch (e) {
+    alert("读取评论失败，请用 https://t.bilibili.com/xxxx 格式链接");
   }
 }
 
-function render() {
-  const block = document.getElementById('block').value.split('\n').map(i=>i.trim()).filter(Boolean);
-  const list = document.getElementById('list');
+function renderList() {
+  const blockWords = document.getElementById('blockWords').value
+    .split('\n')
+    .map(w => w.trim())
+    .filter(Boolean);
+
+  const list = document.getElementById('commentList');
   list.innerHTML = '';
 
-  const f = users.filter(u => !block.some(w => u.msg.includes(w)));
-  window.pool = f;
+  const filtered = userList.filter(u => {
+    return !blockWords.some(w => u.content.includes(w));
+  });
 
-  f.forEach(u => {
+  window.lotteryPool = filtered;
+
+  filtered.forEach(u => {
     const div = document.createElement('div');
-    div.className = 'item';
+    div.className = 'comment-item';
     div.innerHTML = `
       < img src="${u.avatar}">
       <div>
-        <div class="name">${u.uname}</div>
-        <div class="content">${u.msg}</div>
+        <div class="name">${u.name}</div>
+        <div class="content">${u.content}</div>
       </div>
     `;
     list.appendChild(div);
   });
 }
 
-function lottery() {
-  if (!window.pool?.length) return alert('暂无参与名单');
-  const w = window.pool[Math.floor(Math.random()*window.pool.length)];
+function startLottery() {
+  if (!window.lotteryPool || window.lotteryPool.length === 0) {
+    alert("暂无参与名单");
+    return;
+  }
+  const win = window.lotteryPool[Math.floor(Math.random() * window.lotteryPool.length)];
   document.getElementById('winner').innerHTML = `
-    < img src="${w.avatar}">
-    中奖：${w.uname}<br>${w.msg}
+    < img src="${win.avatar}"><br>
+    中奖：${win.name}<br>
+    ${win.content}
   `;
 }
 </script>
