@@ -369,7 +369,7 @@ document.getElementById('start').onclick = () => {
   wonUIDs = [...new Set([...wonUIDs, ...newWins])];
   localStorage.setItem('wonUIDs', JSON.stringify(wonUIDs));
 
-  // 关键：直接读取Excel O列（索引14）的头像URL
+  // 修复头像显示：直接读取Excel O列（索引14）的头像URL
   document.getElementById('result').innerHTML = win.map((w, i) => {
     const uid = w[2] || '';
     const name = w[4] || '无';
