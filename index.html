@@ -32,7 +32,6 @@ h1 {
   font-weight: 500;
 }
 
-/* 电脑：左右分一半 */
 .main-content {
   display: flex;
   gap: 12px;
@@ -51,7 +50,6 @@ h1 {
   padding: 18px;
 }
 
-/* 手机：自动变竖版 */
 @media (max-width: 768px) {
   .main-content {
     flex-direction: column;
@@ -76,7 +74,6 @@ h3 {
   margin: 4px 0;
 }
 
-/* 柔和输入框 */
 input, select, textarea {
   width: 100%;
   padding: 12px;
@@ -97,7 +94,6 @@ textarea {
   resize: none;
 }
 
-/* 柔和按钮 */
 .btn {
   width: 100%;
   background: #fb7299;
@@ -118,7 +114,13 @@ textarea {
   color: #666;
 }
 
-/* 方块单选（柔和版） */
+.btn-clear {
+  background: #444;
+}
+.btn-clear:hover {
+  background: #666;
+}
+
 .radio-group {
   display: flex;
   gap: 12px;
@@ -145,7 +147,6 @@ textarea {
   display: none;
 }
 
-/* 柔和中奖名单 */
 .result {
   background: #2a2a2a;
   padding: 14px;
@@ -165,17 +166,26 @@ textarea {
   background: #333;
   border-radius: 12px;
   padding: 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.winner-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
 }
 .winner-card h4 {
-  margin: 0 0 8px;
+  margin: 0 0 4px;
   color: #fb7299;
   font-size: 18px;
   font-weight: 500;
 }
 .winner-info {
-  font-size: 16px;
-  line-height: 1.5;
-  margin: 6px 0;
+  font-size: 14px;
+  line-height: 1.4;
   color: #ddd;
 }
 .empty-state {
@@ -200,7 +210,6 @@ textarea {
   padding: 12px;
 }
 
-/* 柔和文件选择按钮 */
 input[type="file"]::file-selector-button {
   background: #fb7299;
   color: white;
@@ -268,6 +277,7 @@ input[type="file"]::file-selector-button:hover {
 
       <button class="btn" id="start" disabled>开始抽奖</button>
       <button class="btn" id="export">导出中奖名单</button>
+      <button class="btn btn-clear" id="clearRecord">清空已中奖记录</button>
       <div class="stats" id="info"></div>
     </div>
 
@@ -285,7 +295,10 @@ let rows = [];
 let win = [];
 let head = [];
 
-// 单选切换逻辑
+// 已中奖UID本地记忆
+let wonUIDs = JSON.parse(localStorage.getItem('wonUIDs') || '[]');
+
+// 方块单选切换
 document.querySelectorAll('.radio-item').forEach(item => {
   item.addEventListener('click', () => {
     const name = item.querySelector('input').name;
@@ -297,18 +310,23 @@ document.querySelectorAll('.radio-item').forEach(item => {
   });
 });
 
+// 导入表格
 document.getElementById('file').onchange = e => {
   const f = new FileReader();
   f.onload = e => {
     const wb = XLSX.read(e.target.result);
     const data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1});
-    if(data.length>0){ head=data[0]; rows=data.slice(1).filter(i=>i.join('').trim()) }
+    if(data.length>0){
+      head=data[0];
+      rows=data.slice(1).filter(i=>i.join('').trim());
+    }
     document.getElementById('start').disabled = false;
-    alert(`导入成功：${rows.length} 条`);
+    alert(`导入成功：${rows.length} 条\n已中奖人数：${wonUIDs.length}`);
   };
   f.readAsArrayBuffer(e.target.files[0]);
 };
 
+// 开始抽奖
 document.getElementById('start').onclick = () => {
   const num = +document.getElementById('count').value;
   const at = document.querySelector('input[name="at"]:checked').value;
@@ -325,6 +343,10 @@ document.getElementById('start').onclick = () => {
     const ct = r[8] ? new Date(r[8]) : null;
     if (ct && startTime && ct < startTime) return false;
     if (ct && endTime && ct > endTime) return false;
+
+    const uid = r[2]?.toString().trim();
+    if (uid && wonUIDs.includes(uid)) return false;
+
     return true;
   });
 
@@ -343,18 +365,33 @@ document.getElementById('start').onclick = () => {
   pool.sort(()=>Math.random()-0.5);
   win = pool.slice(0,num);
 
-  document.getElementById('result').innerHTML = win.map((w, i) => `
-    <div class="winner-card">
-      <h4>🎊 第${i+1}名</h4>
-      <div class="winner-info">UID：${w[2]}</div>
-      <div class="winner-info">用户名：${w[4] || '无'}</div>
-      <div class="winner-info">评论：${w[7] || '无'}</div>
-    </div>
-  `).join('') || '<div class="empty-state">暂无中奖名单</div>';
+  const newWins = win.map(w => w[2]?.toString().trim()).filter(Boolean);
+  wonUIDs = [...new Set([...wonUIDs, ...newWins])];
+  localStorage.setItem('wonUIDs', JSON.stringify(wonUIDs));
 
-  document.getElementById('info').innerText = `总评论：${rows.length}｜有效：${pool.length}｜中奖：${num}`;
+  document.getElementById('result').innerHTML = win.map((w, i) => {
+    const uid = w[2] || '';
+    const name = w[4] || '无';
+    const comment = w[7] || '无';
+    const avatar = uid ? `https://q1.qlogo.cn/g?b=qq&nk=${uid}&s=100` : '';
+    return `
+    <div class="winner-card">
+      < img class="winner-avatar" src="${avatar}" onerror="this.src='https://picsum.photos/50/50'">
+      <div>
+        <h4>🎊 第${i+1}名</h4>
+        <div class="winner-info">UID：${uid}</div>
+        <div class="winner-info">${name}</div>
+        <div class="winner-info" style="margin-top:4px;">${comment}</div>
+      </div>
+    </div>
+    `;
+  }).join('') || '<div class="empty-state">暂无中奖名单</div>';
+
+  document.getElementById('info').innerText =
+    `总评论：${rows.length}｜有效：${pool.length}｜中奖：${num}｜累计已抽：${wonUIDs.length}`;
 };
 
+// 导出
 document.getElementById('export').onclick = () => {
   if(!win.length)return alert('请先抽奖');
   const ws = XLSX.utils.aoa_to_sheet([head,...win]);
@@ -362,6 +399,17 @@ document.getElementById('export').onclick = () => {
   XLSX.utils.book_append_sheet(wb,ws,'中奖名单');
   XLSX.writeFile(wb,'老孫抽奖站_中奖名单.xlsx');
 };
+
+// 清空中奖记录
+document.getElementById('clearRecord').onclick = () => {
+  if(confirm('确定清空所有已中奖记录？')){
+    wonUIDs = [];
+    localStorage.removeItem('wonUIDs');
+    alert('已清空所有中奖记录');
+    document.getElementById('info').innerText =
+      `总评论：${rows.length}｜有效：0｜中奖：0｜累计已抽：0`;
+  }
+};
 </script>
 </body>
-          </html>
+</html>
