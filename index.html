@@ -10,20 +10,28 @@
   box-sizing: border-box;
   font-family: "圆幼体", "微软雅黑", sans-serif;
 }
-body {
+/* 页面高度铺满，禁止整体滚动 */
+html, body {
   margin: 0;
-  padding: 12px;
+  padding: 0;
   background: #121212;
   color: #f5f5f5;
+  height: 100vh;
+  overflow: hidden;
 }
 .container {
   width: 100%;
-  max-width: 1400px;
+  max-width: 100%; /* 取消最大宽度限制，填满整个屏幕 */
   margin: 0 auto;
+  height: 100%;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
 }
 .title-bar {
   text-align: center;
-  padding: 12px 0;
+  padding: 6px 0;
+  flex-shrink: 0;
 }
 h1 {
   font-size: 28px;
@@ -32,57 +40,73 @@ h1 {
   font-weight: 500;
 }
 
+/* 主内容区填满剩余空间，无滚动 */
 .main-content {
   display: flex;
   gap: 12px;
-  margin-top: 10px;
-}
-.left-card {
   flex: 1;
+  margin-top: 6px;
+}
+/* 调整左右比例：左侧适中，右侧填满 */
+.left-card {
+  flex: 0 0 420px; /* 固定左侧宽度，大小适中 */
   background: #1e1e1e;
   border-radius: 16px;
-  padding: 18px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
 }
 .right-card {
-  flex: 1;
+  flex: 1; /* 右侧自动填满剩余空间，无留白 */
   background: #1e1e1e;
   border-radius: 16px;
-  padding: 18px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
 }
 
+/* 手机竖版适配 */
 @media (max-width: 768px) {
   .main-content {
     flex-direction: column;
   }
+  .left-card {
+    flex: unset;
+  }
+  .right-card {
+    flex: 1;
+  }
 }
 
 h3 {
-  font-size: 20px;
-  margin: 0 0 12px;
+  font-size: 18px;
+  margin: 0 0 10px;
   text-align: center;
   color: #fb7299;
   font-weight: 500;
+  flex-shrink: 0;
 }
 .label {
-  font-size: 18px;
-  margin: 10px 0 6px;
+  font-size: 16px;
+  margin: 8px 0 4px;
   color: #e0e0e0;
 }
 .tip {
-  font-size: 14px;
+  font-size: 12px;
   color: #999;
-  margin: 4px 0;
+  margin: 2px 0;
 }
 
+/* 输入框样式优化 */
 input, select, textarea {
   width: 100%;
-  padding: 12px;
+  padding: 10px;
   border: 1px solid #333;
   border-radius: 12px;
-  font-size: 16px;
+  font-size: 14px;
   background: #2a2a2a;
   color: #f5f5f5;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   transition: all 0.2s;
 }
 input:focus, select:focus, textarea:focus {
@@ -90,21 +114,24 @@ input:focus, select:focus, textarea:focus {
   outline: none;
 }
 textarea {
-  height: 100px;
+  height: 80px;
   resize: none;
+  flex-shrink: 0;
 }
 
+/* 按钮样式 */
 .btn {
   width: 100%;
   background: #fb7299;
   color: white;
   border: none;
-  padding: 14px;
+  padding: 12px;
   border-radius: 12px;
-  margin: 8px 0;
-  font-size: 18px;
+  margin: 6px 0;
+  font-size: 16px;
   font-weight: 500;
   transition: background 0.2s;
+  flex-shrink: 0;
 }
 .btn:hover {
   background: #ff85a8;
@@ -121,20 +148,22 @@ textarea {
   background: #666;
 }
 
+/* 单选框组 */
 .radio-group {
   display: flex;
-  gap: 12px;
-  margin: 8px 0;
+  gap: 10px;
+  margin: 6px 0;
+  flex-shrink: 0;
 }
 .radio-item {
   flex: 1;
   text-align: center;
-  padding: 12px;
+  padding: 10px;
   border: 1px solid #333;
   border-radius: 12px;
   background: #2a2a2a;
   color: #f5f5f5;
-  font-size: 16px;
+  font-size: 14px;
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -147,32 +176,39 @@ textarea {
   display: none;
 }
 
+/* 中奖列表容器，固定大小，内部滚动 */
 .result {
   background: #2a2a2a;
-  padding: 14px;
+  padding: 10px;
   border-radius: 12px;
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  height: 70vh;
-  overflow-y: auto;
+  grid-template-columns: repeat(2, 1fr); /* 固定2列 */
+  gap: 10px;
+  flex: 1; /* 填满卡片剩余高度 */
+  overflow-y: auto; /* 只有列表内部滚动 */
 }
+/* 手机端改为1列 */
 @media (max-width: 768px) {
   .result {
     grid-template-columns: 1fr;
   }
 }
+
+/* 卡片高度自适应，内容完整显示 */
 .winner-card {
   background: #333;
   border-radius: 12px;
-  padding: 14px;
+  padding: 12px;
   display: flex;
-  align-items: center;
-  gap: 12px;
+  align-items: flex-start;
+  gap: 10px;
+  /* 移除固定高度，改为最小高度，让内容决定高度 */
+  min-height: 120px;
+  width: 100%;
 }
 .winner-avatar {
-  width: 50px;
-  height: 50px;
+  width: 45px;
+  height: 45px;
   border-radius: 50%;
   object-fit: cover;
   flex-shrink: 0;
@@ -180,45 +216,65 @@ textarea {
 .winner-card h4 {
   margin: 0 0 4px;
   color: #fb7299;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 500;
 }
+/* 信息区域自动适配，文字过多自动换行 */
+.winner-info-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
 .winner-info {
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1.4;
   color: #ddd;
+  margin: 2px 0;
+  /* 移除单行限制，允许文字换行 */
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
 }
+
 .empty-state {
   grid-column: 1 / -1;
   text-align: center;
-  padding: 24px;
+  padding: 20px;
   color: #888;
-  font-size: 16px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
 }
 .stats {
-  font-size: 15px;
+  font-size: 13px;
   color: #999;
-  margin-top: 10px;
+  margin-top: 8px;
+  text-align: center;
+  flex-shrink: 0;
 }
 .time-filter {
   display: flex;
-  gap: 10px;
-  margin: 6px 0;
+  gap: 8px;
+  margin: 4px 0;
+  flex-shrink: 0;
 }
 .time-filter input {
   flex: 1;
-  padding: 12px;
+  padding: 10px;
 }
 
 input[type="file"]::file-selector-button {
   background: #fb7299;
   color: white;
   border: none;
-  padding: 10px 16px;
+  padding: 8px 14px;
   border-radius: 8px;
-  margin-right: 10px;
+  margin-right: 8px;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 14px;
 }
 input[type="file"]::file-selector-button:hover {
   background: #ff85a8;
@@ -369,7 +425,7 @@ document.getElementById('start').onclick = () => {
   wonUIDs = [...new Set([...wonUIDs, ...newWins])];
   localStorage.setItem('wonUIDs', JSON.stringify(wonUIDs));
 
-  // 修复头像显示：用DOM创建，避免引号问题
+  // 渲染中奖名单
   const resultContainer = document.getElementById('result');
   resultContainer.innerHTML = '';
 
@@ -398,16 +454,18 @@ document.getElementById('start').onclick = () => {
       this.src = 'https://picsum.photos/50/50';
     };
 
-    const infoDiv = document.createElement('div');
-    infoDiv.innerHTML = `
+    const infoWrap = document.createElement('div');
+    infoWrap.className = 'winner-info-wrap';
+    
+    infoWrap.innerHTML = `
       <h4>🎊 第${i+1}名</h4>
       <div class="winner-info">UID：${uid}</div>
       <div class="winner-info">${name}</div>
-      <div class="winner-info" style="margin-top:4px;">${comment}</div>
+      <div class="winner-info">${comment}</div>
     `;
 
     card.appendChild(img);
-    card.appendChild(infoDiv);
+    card.appendChild(infoWrap);
     resultContainer.appendChild(card);
   });
 
