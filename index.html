@@ -148,6 +148,7 @@ textarea {
   display: none;
 }
 
+/* 核心布局：固定间距，仅滚动，不撑开 */
 .result {
   background: #2a2a2a;
   padding: 8px;
@@ -168,6 +169,7 @@ textarea {
   border-radius: 4px;
 }
 
+/* 卡片样式：确保头像占位 */
 .winner-card {
   background: #333;
   border-radius: 12px;
@@ -176,18 +178,32 @@ textarea {
   gap: 10px;
   height: 100px;
   width: 100%;
+  align-items: center; /* 垂直居中，更美观 */
 }
-.winner-avatar {
+/* 头像容器：固定50px宽高，确保即使没图也不会移位 */
+.avatar-container {
   width: 50px;
   height: 50px;
   border-radius: 50%;
+  overflow: hidden;
   flex-shrink: 0;
+  background: #444; /* 兜底背景色 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.winner-avatar {
+  width: 100%;
+  height: 100%;
   object-fit: cover;
 }
 .winner-card h4 {
   margin: 0 0 4px;
   color: #fb7299;
   font-size: 16px;
+}
+.winner-info-wrap {
+  flex: 1;
 }
 .winner-info {
   font-size: 13px;
@@ -261,7 +277,7 @@ textarea {
       </div>
       <div>
         <div class="label">屏蔽词（一行一个）</div>
-        <textarea id="block"></textarea>
+        <textarea id="block" placeholder="一行一个屏蔽词"></textarea>
       </div>
       <button class="btn" id="start" disabled>开始抽奖</button>
       <button class="btn" id="export">导出中奖名单</button>
@@ -272,7 +288,7 @@ textarea {
     <div class="right-card">
       <h3>🎊 中奖名单 🎊</h3>
       <div class="result" id="result">
-        <div class="empty-state">点击「开始抽奖」</div>
+        <div class="empty-state">点击「开始抽奖」生成名单</div>
       </div>
     </div>
   </div>
@@ -283,6 +299,10 @@ let rows = [];
 let winList = [];
 let head = [];
 let wonUIDs = JSON.parse(localStorage.getItem('wonUIDs') || '[]');
+// 可靠的图片代理前缀，解决跨域问题
+const PROXY_PREFIX = 'https://images.weserv.nl/?url=';
+// 默认头像
+const DEFAULT_AVATAR = 'https://picsum.photos/50/50';
 
 function calcValidCount() {
   if (rows.length === 0) return 0;
@@ -319,12 +339,11 @@ function updateStats() {
   const total = rows.length;
   const valid = calcValidCount();
   const won = wonUIDs.length;
-  document.getElementById('info').innerText = `总评论：${total}｜有效：${valid}｜已抽：${won}`;
+  document.getElementById('info').innerText = `总评论：${total}｜有效：${valid}｜累计已抽：${won}`;
 }
 
-document.querySelectorAll('input[name="at"], input[name="repeat"]').forEach(el => {
-  el.addEventListener('change', updateStats);
-});
+// 绑定事件
+document.querySelectorAll('input[name="at"], input[name="repeat"]').forEach(el => el.addEventListener('change', updateStats));
 document.getElementById('block').addEventListener('input', updateStats);
 document.getElementById('startTime').addEventListener('change', updateStats);
 document.getElementById('endTime').addEventListener('change', updateStats);
@@ -339,25 +358,31 @@ document.querySelectorAll('.radio-item').forEach(item => {
   });
 });
 
+// 导入表格
 document.getElementById('file').onchange = e => {
   const f = new FileReader();
   f.onload = e => {
     const wb = XLSX.read(e.target.result);
-    const data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header:1 });
+    const data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1 });
     head = data[0] || [];
     rows = data.slice(1).filter(i => i && i.join('').trim());
     document.getElementById('start').disabled = false;
     updateStats();
-    alert(`导入成功：${rows.length} 条`);
+    alert(`导入成功：共 ${rows.length} 条数据`);
   };
   f.readAsArrayBuffer(e.target.files[0]);
 };
 
+// 核心抽奖逻辑
 document.getElementById('start').onclick = () => {
   const num = +document.getElementById('count').value;
   const valid = calcValidCount();
-  if (valid < num) { alert(`有效人数不足 ${num}`); return; }
+  if (valid < num) {
+    alert(`有效人数不足！当前有效：${valid}，需抽取：${num}`);
+    return;
+  }
 
+  // 筛选逻辑
   const at = document.querySelector('input[name="at"]:checked').value;
   const dedupe = document.querySelector('input[name="repeat"]:checked').value;
   const blocks = document.getElementById('block').value.split('\n').map(i => i.trim().toLowerCase()).filter(Boolean);
@@ -386,61 +411,91 @@ document.getElementById('start').onclick = () => {
     });
   }
 
+  // 随机抽奖
   pool.sort(() => Math.random() - 0.5);
   winList = pool.slice(0, num);
+  
+  // 记录已中奖UID
   const newWins = winList.map(w => w[2]?.toString().trim()).filter(Boolean);
   wonUIDs = [...new Set([...wonUIDs, ...newWins])];
   localStorage.setItem('wonUIDs', JSON.stringify(wonUIDs));
 
+  // 渲染中奖名单
   const res = document.getElementById('result');
   res.innerHTML = '';
 
   winList.forEach((w, i) => {
-    const uid = w[2] || '';
-    const name = w[4] || '无';
-    const comment = w[7] || '';
-    const avatarUrl = w[14] || '';
+    const uid = w[2] || '未知';
+    const name = w[4] || '匿名用户';
+    const comment = w[7] || '无评论';
+    // 获取表格中的头像链接（第15列，索引14）
+    const rawAvatar = w[14] || '';
 
-    // 正确创建图片元素
-    const img = document.createElement('img');
-    img.className = 'winner-avatar';
-    img.src = avatarUrl;
-    img.onerror = function() {
-      this.style.display = 'none';
-    };
-
+    // 1. 创建卡片容器
     const card = document.createElement('div');
     card.className = 'winner-card';
 
-    const infoDiv = document.createElement('div');
-    infoDiv.innerHTML = `
+    // 2. 创建头像容器（固定占位）
+    const avatarContainer = document.createElement('div');
+    avatarContainer.className = 'avatar-container';
+
+    // 3. 创建图片元素
+    const img = document.createElement('img');
+    img.className = 'winner-avatar';
+    
+    // 设置图片地址：有链接则用代理，无则用默认图
+    if (rawAvatar && rawAvatar.trim() !== '') {
+      // 使用代理解决跨域问题
+      img.src = PROXY_PREFIX + encodeURIComponent(rawAvatar.trim());
+    } else {
+      // 无头像时显示默认图
+      img.src = DEFAULT_AVATAR;
+    }
+
+    // 图片加载失败时，强制显示默认图（不再隐藏）
+    img.onerror = function() {
+      this.src = DEFAULT_AVATAR;
+    };
+
+    // 4. 创建信息区域
+    const infoWrap = document.createElement('div');
+    infoWrap.className = 'winner-info-wrap';
+    infoWrap.innerHTML = `
       <h4>🎊 第${i+1}名</h4>
       <div class="winner-info">UID：${uid}</div>
       <div class="winner-info">暱稱：${name}</div>
       <div class="winner-info">${comment}</div>
     `;
 
-    card.appendChild(img);
-    card.appendChild(infoDiv);
+    // 5. 组装卡片
+    avatarContainer.appendChild(img);
+    card.appendChild(avatarContainer);
+    card.appendChild(infoWrap);
     res.appendChild(card);
   });
+
   updateStats();
 };
 
+// 导出名单
 document.getElementById('export').onclick = () => {
-  if (!winList.length) { alert('请先抽奖'); return; }
+  if (!winList.length) {
+    alert('请先进行抽奖！');
+    return;
+  }
   const ws = XLSX.utils.aoa_to_sheet([head, ...winList]);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, '中奖名单');
   XLSX.writeFile(wb, '老孫抽奖站_中奖名单.xlsx');
 };
 
+// 清空记录
 document.getElementById('clearRecord').onclick = () => {
-  if (confirm('确定清空？')) {
+  if (confirm('确定要清空所有已中奖记录吗？此操作不可恢复！')) {
     wonUIDs = [];
     localStorage.removeItem('wonUIDs');
     updateStats();
-    alert('已清空');
+    alert('已清空所有中奖记录');
   }
 };
 </script>
