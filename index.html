@@ -369,11 +369,12 @@ document.getElementById('start').onclick = () => {
   wonUIDs = [...new Set([...wonUIDs, ...newWins])];
   localStorage.setItem('wonUIDs', JSON.stringify(wonUIDs));
 
+  // 关键：直接读取Excel O列（索引14）的头像URL
   document.getElementById('result').innerHTML = win.map((w, i) => {
     const uid = w[2] || '';
     const name = w[4] || '无';
     const comment = w[7] || '无';
-    const avatar = uid ? `https://q1.qlogo.cn/g?b=qq&nk=${uid}&s=100` : '';
+    const avatar = w[14] || ''; // O列对应索引14
     return `
     <div class="winner-card">
       < img class="winner-avatar" src="${avatar}" onerror="this.src='https://picsum.photos/50/50'">
