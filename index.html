@@ -48,6 +48,7 @@ h1 {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  height: 100%;
 }
 .right-card {
   flex: 1;
@@ -65,6 +66,7 @@ h1 {
   }
   .left-card {
     flex: none;
+    height: auto;
   }
   .result {
     grid-template-columns: 1fr !important;
@@ -104,15 +106,16 @@ textarea {
   resize: none;
 }
 
-.btn {
+.btn, input[type="file"]::file-selector-button {
   background: #fb7299;
   color: white;
   border: none;
   padding: 12px;
   border-radius: 12px;
   font-size: 16px;
+  cursor: pointer;
 }
-.btn:hover {
+.btn:hover, input[type="file"]::file-selector-button:hover {
   background: #ff85a8;
 }
 .btn:disabled {
@@ -170,8 +173,9 @@ textarea {
   padding: 12px;
   display: flex;
   gap: 10px;
-  width: 100%;
   align-items: flex-start;
+  width: 100%;
+  min-width: 0;
 }
 .avatar-container {
   width: 50px;
@@ -199,10 +203,10 @@ textarea {
 .winner-info {
   font-size: 13px;
   color: #ddd;
-  word-break: break-all;
-  white-space: pre-wrap;
-  overflow: hidden;
   line-height: 1.4;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow: hidden;
 }
 
 .empty-state {
@@ -289,7 +293,10 @@ textarea {
 let rows = [];
 let winList = [];
 let head = [];
-let wonUIDs = JSON.parse(localStorage.getItem('wonUIDs') || '[]');
+
+// 🔥 刷新页面就清空，不再本地保存
+let wonUIDs = []; 
+
 const PROXY_PREFIX = 'https://images.weserv.nl/?url=';
 const DEFAULT_AVATAR = 'https://picsum.photos/50/50';
 
@@ -328,7 +335,7 @@ function updateStats() {
   const total = rows.length;
   const valid = calcValidCount();
   const won = wonUIDs.length;
-  document.getElementById('info').innerText = `总评论：${total}｜有效：${valid}｜已抽：${won}`;
+  document.getElementById('info').innerText = `总评论：${total}｜有效：${valid}｜本次已抽：${won}`;
 }
 
 document.querySelectorAll('input[name="at"], input[name="repeat"]').forEach(el => {
@@ -397,9 +404,9 @@ document.getElementById('start').onclick = () => {
 
   pool.sort(() => Math.random() - 0.5);
   winList = pool.slice(0, num);
+  
   const newWins = winList.map(w => w[2]?.toString().trim()).filter(Boolean);
   wonUIDs = [...new Set([...wonUIDs, ...newWins])];
-  localStorage.setItem('wonUIDs', JSON.stringify(wonUIDs));
 
   const res = document.getElementById('result');
   res.innerHTML = '';
@@ -451,9 +458,8 @@ document.getElementById('export').onclick = () => {
 };
 
 document.getElementById('clearRecord').onclick = () => {
-  if (confirm('确定清空？')) {
+  if (confirm('确定清空本次已抽记录？')) {
     wonUIDs = [];
-    localStorage.removeItem('wonUIDs');
     updateStats();
     alert('已清空');
   }
