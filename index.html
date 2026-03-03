@@ -72,9 +72,6 @@ h1 {
     flex: none;
     min-height: 500px;
   }
-  .result {
-    grid-template-columns: 1fr !important;
-  }
 }
 
 h3 {
@@ -162,9 +159,9 @@ textarea {
   background: #2a2a2a;
   padding: 10px;
   border-radius: 12px;
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   flex: 1;
   min-height: 0;
   overflow-y: auto;
@@ -190,12 +187,13 @@ textarea {
   display: flex;
   align-items: center;
   gap: 10px;
-  min-height: 120px;
+  height: 80px;
   width: 100%;
+  flex-shrink: 0;
 }
 .winner-avatar {
-  width: 45px;
-  height: 45px;
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
   object-fit: cover;
   flex-shrink: 0;
@@ -204,21 +202,24 @@ textarea {
   margin: 0 0 4px;
   color: #fb7299;
   font-size: 16px;
+  white-space: nowrap;
 }
 .winner-info-wrap {
   flex: 1;
   display: flex;
   flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
 }
 .winner-info {
   font-size: 13px;
-  line-height: 1.4;
   color: #ddd;
-  margin: 2px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .empty-state {
-  grid-column: 1 / -1;
   text-align: center;
   padding: 20px;
   color: #888;
@@ -228,11 +229,12 @@ textarea {
   height: 100%;
 }
 .stats {
-  font-size: 13px;
-  color: #999;
+  font-size: 14px;
+  color: #fb7299;
   margin-top: 8px;
   text-align: center;
   flex-shrink: 0;
+  font-weight: 500;
 }
 .time-filter {
   display: flex;
@@ -339,34 +341,9 @@ let winList = [];
 let head = [];
 let wonUIDs = JSON.parse(localStorage.getItem('wonUIDs') || '[]');
 
-document.querySelectorAll('.radio-item').forEach(item => {
-  item.addEventListener('click', () => {
-    const name = item.querySelector('input').name;
-    document.querySelectorAll(`input[name="${name}"]`).forEach(i => {
-      i.parentElement.classList.remove('active');
-    });
-    item.classList.add('active');
-    item.querySelector('input').checked = true;
-  });
-});
-
-document.getElementById('file').onchange = e => {
-  const f = new FileReader();
-  f.onload = e => {
-    const wb = XLSX.read(e.target.result);
-    const data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1 });
-    if (data.length > 0) {
-      head = data[0];
-      rows = data.slice(1).filter(i => i.join('').trim());
-    }
-    document.getElementById('start').disabled = false;
-    alert(`导入成功：${rows.length} 条\n已中奖人数：${wonUIDs.length}`);
-  };
-  f.readAsArrayBuffer(e.target.files[0]);
-};
-
-document.getElementById('start').onclick = () => {
-  const num = +document.getElementById('count').value;
+// 实时计算有效评论数
+function calcValidCount() {
+  if (rows.length === 0) return 0;
   const at = document.querySelector('input[name="at"]:checked').value;
   const dedupe = document.querySelector('input[name="repeat"]:checked').value;
   const blocks = document.getElementById('block').value.split('\n').map(i => i.trim().toLowerCase()).filter(Boolean);
@@ -396,10 +373,91 @@ document.getElementById('start').onclick = () => {
       return true;
     });
   }
+  return pool.length;
+}
 
-  if (pool.length < num) {
-    alert(`有效人数不足 ${num}（当前有效：${pool.length}）`);
+// 更新统计显示
+function updateStats() {
+  const total = rows.length;
+  const valid = calcValidCount();
+  const won = wonUIDs.length;
+  document.getElementById('info').innerText =
+    `总评论：${total}｜有效：${valid}｜累计已抽：${won}`;
+}
+
+// 绑定所有会影响有效数的控件
+function bindListeners() {
+  document.querySelectorAll('input[name="at"], input[name="repeat"]').forEach(el => {
+    el.addEventListener('change', updateStats);
+  });
+  document.getElementById('block').addEventListener('input', updateStats);
+  document.getElementById('startTime').addEventListener('change', updateStats);
+  document.getElementById('endTime').addEventListener('change', updateStats);
+  document.querySelectorAll('.radio-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const name = item.querySelector('input').name;
+      document.querySelectorAll(`input[name="${name}"]`).forEach(i => {
+        i.parentElement.classList.remove('active');
+      });
+      item.classList.add('active');
+      item.querySelector('input').checked = true;
+      updateStats();
+    });
+  });
+}
+
+document.getElementById('file').onchange = e => {
+  const f = new FileReader();
+  f.onload = e => {
+    const wb = XLSX.read(e.target.result);
+    const data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1 });
+    if (data.length > 0) {
+      head = data[0];
+      rows = data.slice(1).filter(i => i.join('').trim());
+    }
+    document.getElementById('start').disabled = false;
+    updateStats();
+    alert(`导入成功：${rows.length} 条\n已中奖人数：${wonUIDs.length}`);
+  };
+  f.readAsArrayBuffer(e.target.files[0]);
+};
+
+document.getElementById('start').onclick = () => {
+  const num = +document.getElementById('count').value;
+  const valid = calcValidCount();
+  if (valid < num) {
+    alert(`有效人数不足 ${num}（当前有效：${valid}）`);
     return;
+  }
+
+  const at = document.querySelector('input[name="at"]:checked').value;
+  const dedupe = document.querySelector('input[name="repeat"]:checked').value;
+  const blocks = document.getElementById('block').value.split('\n').map(i => i.trim().toLowerCase()).filter(Boolean);
+  const startTime = document.getElementById('startTime').value ? new Date(document.getElementById('startTime').value) : null;
+  const endTime = document.getElementById('endTime').value ? new Date(document.getElementById('endTime').value) : null;
+
+  let pool = rows.filter(r => {
+    const t = r.join('').toLowerCase();
+    if (at === 'forbid' && t.includes('@')) return false;
+    if (blocks.some(b => t.includes(b))) return false;
+
+    const ct = r[8] ? new Date(r[8]) : null;
+    if (ct && startTime && ct < startTime) return false;
+    if (ct && endTime && ct > endTime) return false;
+
+    const uid = r[2]?.toString().trim();
+    if (uid && wonUIDs.includes(uid)) return false;
+    return true;
+  });
+
+  if (dedupe === 'dedupe') {
+    const uidSet = new Set();
+    pool = pool.filter(row => {
+      const uid = row[2];
+      if (uidSet.has(uid)) return false;
+      uidSet.add(uid);
+      return true;
+    });
   }
 
   pool.sort(() => Math.random() - 0.5);
@@ -436,8 +494,7 @@ document.getElementById('start').onclick = () => {
 
     infoWrap.innerHTML = `
       <h4>🎊 第${i+1}名</h4>
-      <div class="winner-info">UID：${uid}</div>
-      <div class="winner-info">${name}</div>
+      <div class="winner-info">UID：${uid}  ${name}</div>
       <div class="winner-info">${comment}</div>
     `;
 
@@ -446,8 +503,7 @@ document.getElementById('start').onclick = () => {
     resultContainer.appendChild(card);
   });
 
-  document.getElementById('info').innerText =
-    `总评论：${rows.length}｜有效：${pool.length}｜中奖：${num}｜累计已抽：${wonUIDs.length}`;
+  updateStats();
 };
 
 document.getElementById('export').onclick = () => {
@@ -465,11 +521,13 @@ document.getElementById('clearRecord').onclick = () => {
   if (confirm('确定清空所有已中奖记录？')) {
     wonUIDs = [];
     localStorage.removeItem('wonUIDs');
-    document.getElementById('info').innerText =
-      `总评论：${rows.length}｜有效：0｜中奖：0｜累计已抽：0`;
+    updateStats();
     alert('已清空所有中奖记录');
   }
 };
+
+// 初始化监听
+bindListeners();
 </script>
 </body>
 </html>
