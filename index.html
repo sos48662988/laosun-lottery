@@ -369,12 +369,17 @@ document.getElementById('start').onclick = () => {
   wonUIDs = [...new Set([...wonUIDs, ...newWins])];
   localStorage.setItem('wonUIDs', JSON.stringify(wonUIDs));
 
-  // 修复头像显示：直接读取Excel O列（索引14）的头像URL
+  // ✅ 关键：跨域代理 + 头像显示
   document.getElementById('result').innerHTML = win.map((w, i) => {
     const uid = w[2] || '';
     const name = w[4] || '无';
     const comment = w[7] || '无';
-    const avatar = w[14] || ''; // O列对应索引14
+    
+    // 头像 + 跨域代理（解决B站头像不显示问题）
+    const proxy = "https://images.weserv.nl/?url=";
+    const originalAvatar = w[14] || "";
+    const avatar = originalAvatar ? proxy + encodeURIComponent(originalAvatar) : "";
+
     return `
     <div class="winner-card">
       < img class="winner-avatar" src="${avatar}" onerror="this.src='https://picsum.photos/50/50'">
