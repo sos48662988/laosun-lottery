@@ -15,11 +15,12 @@ html, body {
   padding: 0;
   background: #121121;
   color: #f5f5f5;
-  height: 100%;
+  height: 100vh;
+  overflow: hidden;
 }
 .container {
   width: 100%;
-  min-height: 100vh;
+  height: 100vh;
   padding: 12px;
   display: flex;
   flex-direction: column;
@@ -50,6 +51,7 @@ h1 {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  overflow-y: auto;
 }
 .right-card {
   flex: 1;
@@ -62,11 +64,19 @@ h1 {
 }
 
 @media (max-width: 768px) {
+  html, body {
+    height: auto;
+    overflow: auto;
+  }
+  .container {
+    height: auto;
+  }
   .main-content {
     flex-direction: column;
   }
   .left-card {
     flex: none;
+    overflow: visible;
   }
   .right-card {
     flex: none;
@@ -158,7 +168,7 @@ textarea {
   display: none;
 }
 
-/* 雙列展示 */
+/* 中奖名单：双列 + 独立滚动 */
 .result {
   background: #2a2a2a;
   padding: 10px;
@@ -184,7 +194,7 @@ textarea {
   border-radius: 4px;
 }
 
-/* 固定橫向長條卡片 */
+/* 还原截图中的卡片大小 */
 .winner-card {
   background: #333;
   border-radius: 12px;
@@ -231,7 +241,6 @@ textarea {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 100%;
   grid-column: span 2;
 }
 .stats {
@@ -500,7 +509,7 @@ document.getElementById('start').onclick = () => {
 
     infoWrap.innerHTML = `
       <h4>🎊 第${i+1}名</h4>
-      <div class="winner-info">UID：${uid}  ${name}</div>
+      <div class="winner-info">UID：${uid} ${name}</div>
       <div class="winner-info">${comment}</div>
     `;
 
@@ -532,7 +541,6 @@ document.getElementById('clearRecord').onclick = () => {
   }
 };
 
-// 初始化监听
 bindListeners();
 </script>
 </body>
