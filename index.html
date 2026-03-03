@@ -369,29 +369,47 @@ document.getElementById('start').onclick = () => {
   wonUIDs = [...new Set([...wonUIDs, ...newWins])];
   localStorage.setItem('wonUIDs', JSON.stringify(wonUIDs));
 
-  // ✅ 关键：跨域代理 + 头像显示
-  document.getElementById('result').innerHTML = win.map((w, i) => {
+  // 修复头像显示：用DOM创建，避免引号问题
+  const resultContainer = document.getElementById('result');
+  resultContainer.innerHTML = '';
+
+  if (win.length === 0) {
+    resultContainer.innerHTML = '<div class="empty-state">暂无中奖名单</div>';
+    return;
+  }
+
+  win.forEach((w, i) => {
     const uid = w[2] || '';
     const name = w[4] || '无';
     const comment = w[7] || '无';
-    
-    // 头像 + 跨域代理（解决B站头像不显示问题）
+
+    // 头像 + 跨域代理
     const proxy = "https://images.weserv.nl/?url=";
     const originalAvatar = w[14] || "";
     const avatar = originalAvatar ? proxy + encodeURIComponent(originalAvatar) : "";
 
-    return `
-    <div class="winner-card">
-      < img class="winner-avatar" src="${avatar}" onerror="this.src='https://picsum.photos/50/50'">
-      <div>
-        <h4>🎊 第${i+1}名</h4>
-        <div class="winner-info">UID：${uid}</div>
-        <div class="winner-info">${name}</div>
-        <div class="winner-info" style="margin-top:4px;">${comment}</div>
-      </div>
-    </div>
+    const card = document.createElement('div');
+    card.className = 'winner-card';
+
+    const img = document.createElement('img');
+    img.className = 'winner-avatar';
+    img.src = avatar;
+    img.onerror = function() {
+      this.src = 'https://picsum.photos/50/50';
+    };
+
+    const infoDiv = document.createElement('div');
+    infoDiv.innerHTML = `
+      <h4>🎊 第${i+1}名</h4>
+      <div class="winner-info">UID：${uid}</div>
+      <div class="winner-info">${name}</div>
+      <div class="winner-info" style="margin-top:4px;">${comment}</div>
     `;
-  }).join('') || '<div class="empty-state">暂无中奖名单</div>';
+
+    card.appendChild(img);
+    card.appendChild(infoDiv);
+    resultContainer.appendChild(card);
+  });
 
   document.getElementById('info').innerText =
     `总评论：${rows.length}｜有效：${pool.length}｜中奖：${num}｜累计已抽：${wonUIDs.length}`;
