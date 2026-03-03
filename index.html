@@ -39,6 +39,7 @@ h1 {
   gap: 12px;
   flex: 1;
   min-height: 0;
+  align-items: stretch;
 }
 .left-card {
   flex: 0 0 320px;
@@ -48,7 +49,6 @@ h1 {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  height: 100%;
 }
 .right-card {
   flex: 1;
@@ -66,7 +66,6 @@ h1 {
   }
   .left-card {
     flex: none;
-    height: auto;
   }
   .result {
     grid-template-columns: 1fr !important;
@@ -173,7 +172,7 @@ textarea {
   padding: 12px;
   display: flex;
   gap: 10px;
-  align-items: flex-start;
+  align-items: center; /* 🔥 头像垂直居中 */
   width: 100%;
   min-width: 0;
 }
@@ -237,7 +236,7 @@ textarea {
     <div class="left-card">
       <div>
         <div class="label">导入表格</div>
-        <div class="tip">支持 xlsx、xls、csv</div>
+        <div class="tip">支持 xlsx,.xls,.csv</div>
         <input type="file" id="file" accept=".xlsx,.xls,.csv">
       </div>
       <div>
@@ -294,7 +293,6 @@ let rows = [];
 let winList = [];
 let head = [];
 
-// 🔥 刷新页面就清空，不再本地保存
 let wonUIDs = []; 
 
 const PROXY_PREFIX = 'https://images.weserv.nl/?url=';
