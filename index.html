@@ -10,19 +10,16 @@
   box-sizing: border-box;
   font-family: "圆幼体", "微软雅黑", sans-serif;
 }
-/* 页面高度铺满，禁止整体滚动 */
 html, body {
   margin: 0;
   padding: 0;
-  background: #121212;
+  background: #121121;
   color: #f5f5f5;
   height: 100vh;
   overflow: hidden;
 }
 .container {
   width: 100%;
-  max-width: 100%; /* 取消最大宽度限制，填满整个屏幕 */
-  margin: 0 auto;
   height: 100%;
   padding: 12px;
   display: flex;
@@ -40,41 +37,45 @@ h1 {
   font-weight: 500;
 }
 
-/* 主内容区填满剩余空间，无滚动 */
 .main-content {
   display: flex;
   gap: 12px;
   flex: 1;
-  margin-top: 6px;
+  min-height: 0;
 }
-/* 调整左右比例：左侧适中，右侧填满 */
 .left-card {
-  flex: 0 0 420px; /* 固定左侧宽度，大小适中 */
+  flex: 0 0 420px;
   background: #1e1e1e;
   border-radius: 16px;
   padding: 14px;
   display: flex;
   flex-direction: column;
+  min-height: 0;
 }
 .right-card {
-  flex: 1; /* 右侧自动填满剩余空间，无留白 */
+  flex: 1;
   background: #1e1e1e;
   border-radius: 16px;
   padding: 14px;
   display: flex;
   flex-direction: column;
+  min-height: 0;
 }
 
-/* 手机竖版适配 */
 @media (max-width: 768px) {
+  html, body {
+    height: auto;
+    overflow: auto;
+  }
   .main-content {
     flex-direction: column;
   }
   .left-card {
-    flex: unset;
+    flex: none;
   }
   .right-card {
-    flex: 1;
+    flex: none;
+    min-height: 500px;
   }
 }
 
@@ -83,7 +84,6 @@ h3 {
   margin: 0 0 10px;
   text-align: center;
   color: #fb7299;
-  font-weight: 500;
   flex-shrink: 0;
 }
 .label {
@@ -97,7 +97,6 @@ h3 {
   margin: 2px 0;
 }
 
-/* 输入框样式优化 */
 input, select, textarea {
   width: 100%;
   padding: 10px;
@@ -107,7 +106,6 @@ input, select, textarea {
   background: #2a2a2a;
   color: #f5f5f5;
   margin-bottom: 6px;
-  transition: all 0.2s;
 }
 input:focus, select:focus, textarea:focus {
   border-color: #fb7299;
@@ -119,7 +117,6 @@ textarea {
   flex-shrink: 0;
 }
 
-/* 按钮样式 */
 .btn {
   width: 100%;
   background: #fb7299;
@@ -129,8 +126,6 @@ textarea {
   border-radius: 12px;
   margin: 6px 0;
   font-size: 16px;
-  font-weight: 500;
-  transition: background 0.2s;
   flex-shrink: 0;
 }
 .btn:hover {
@@ -140,7 +135,6 @@ textarea {
   background: #333;
   color: #666;
 }
-
 .btn-clear {
   background: #444;
 }
@@ -148,7 +142,6 @@ textarea {
   background: #666;
 }
 
-/* 单选框组 */
 .radio-group {
   display: flex;
   gap: 10px;
@@ -164,8 +157,6 @@ textarea {
   background: #2a2a2a;
   color: #f5f5f5;
   font-size: 14px;
-  cursor: pointer;
-  transition: all 0.2s;
 }
 .radio-item.active {
   background: #fb7299;
@@ -176,33 +167,44 @@ textarea {
   display: none;
 }
 
-/* 中奖列表容器，固定大小，内部滚动 */
 .result {
   background: #2a2a2a;
   padding: 10px;
   border-radius: 12px;
   display: grid;
-  grid-template-columns: repeat(2, 1fr); /* 固定2列 */
+  grid-template-columns: repeat(2, 1fr);
   gap: 10px;
-  flex: 1; /* 填满卡片剩余高度 */
-  overflow-y: auto; /* 只有列表内部滚动 */
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #fb7299 #333;
 }
-/* 手机端改为1列 */
+.result::-webkit-scrollbar {
+  width: 8px;
+}
+.result::-webkit-scrollbar-track {
+  background: #333;
+  border-radius: 4px;
+}
+.result::-webkit-scrollbar-thumb {
+  background: #fb7299;
+  border-radius: 4px;
+}
+
 @media (max-width: 768px) {
   .result {
     grid-template-columns: 1fr;
   }
 }
 
-/* 卡片高度自适应，内容完整显示 */
 .winner-card {
   background: #333;
   border-radius: 12px;
   padding: 12px;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 10px;
-  /* 移除固定高度，改为最小高度，让内容决定高度 */
   min-height: 120px;
   width: 100%;
 }
@@ -217,24 +219,17 @@ textarea {
   margin: 0 0 4px;
   color: #fb7299;
   font-size: 16px;
-  font-weight: 500;
 }
-/* 信息区域自动适配，文字过多自动换行 */
 .winner-info-wrap {
   flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: center;
 }
 .winner-info {
   font-size: 13px;
   line-height: 1.4;
   color: #ddd;
   margin: 2px 0;
-  /* 移除单行限制，允许文字换行 */
-  white-space: normal;
-  overflow: visible;
-  text-overflow: unset;
 }
 
 .empty-state {
@@ -242,7 +237,6 @@ textarea {
   text-align: center;
   padding: 20px;
   color: #888;
-  font-size: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -268,16 +262,12 @@ textarea {
 
 input[type="file"]::file-selector-button {
   background: #fb7299;
-  color: white;
   border: none;
   padding: 8px 14px;
   border-radius: 8px;
   margin-right: 8px;
   cursor: pointer;
   font-size: 14px;
-}
-input[type="file"]::file-selector-button:hover {
-  background: #ff85a8;
 }
 </style>
 </head>
@@ -350,11 +340,8 @@ input[type="file"]::file-selector-button:hover {
 let rows = [];
 let win = [];
 let head = [];
-
-// 已中奖UID本地记忆
 let wonUIDs = JSON.parse(localStorage.getItem('wonUIDs') || '[]');
 
-// 方块单选切换
 document.querySelectorAll('.radio-item').forEach(item => {
   item.addEventListener('click', () => {
     const name = item.querySelector('input').name;
@@ -366,7 +353,6 @@ document.querySelectorAll('.radio-item').forEach(item => {
   });
 });
 
-// 导入表格
 document.getElementById('file').onchange = e => {
   const f = new FileReader();
   f.onload = e => {
@@ -382,7 +368,6 @@ document.getElementById('file').onchange = e => {
   f.readAsArrayBuffer(e.target.files[0]);
 };
 
-// 开始抽奖
 document.getElementById('start').onclick = () => {
   const num = +document.getElementById('count').value;
   const at = document.querySelector('input[name="at"]:checked').value;
@@ -402,7 +387,6 @@ document.getElementById('start').onclick = () => {
 
     const uid = r[2]?.toString().trim();
     if (uid && wonUIDs.includes(uid)) return false;
-
     return true;
   });
 
@@ -425,7 +409,6 @@ document.getElementById('start').onclick = () => {
   wonUIDs = [...new Set([...wonUIDs, ...newWins])];
   localStorage.setItem('wonUIDs', JSON.stringify(wonUIDs));
 
-  // 渲染中奖名单
   const resultContainer = document.getElementById('result');
   resultContainer.innerHTML = '';
 
@@ -437,9 +420,8 @@ document.getElementById('start').onclick = () => {
   win.forEach((w, i) => {
     const uid = w[2] || '';
     const name = w[4] || '无';
-    const comment = w[7] || '无';
+    const comment = w[7] || '';
 
-    // 头像 + 跨域代理
     const proxy = "https://images.weserv.nl/?url=";
     const originalAvatar = w[14] || "";
     const avatar = originalAvatar ? proxy + encodeURIComponent(originalAvatar) : "";
@@ -473,7 +455,6 @@ document.getElementById('start').onclick = () => {
     `总评论：${rows.length}｜有效：${pool.length}｜中奖：${num}｜累计已抽：${wonUIDs.length}`;
 };
 
-// 导出
 document.getElementById('export').onclick = () => {
   if(!win.length)return alert('请先抽奖');
   const ws = XLSX.utils.aoa_to_sheet([head,...win]);
@@ -482,7 +463,6 @@ document.getElementById('export').onclick = () => {
   XLSX.writeFile(wb,'老孫抽奖站_中奖名单.xlsx');
 };
 
-// 清空中奖记录
 document.getElementById('clearRecord').onclick = () => {
   if(confirm('确定清空所有已中奖记录？')){
     wonUIDs = [];
