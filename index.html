@@ -400,24 +400,28 @@ document.getElementById('start').onclick = () => {
     const name = w[4] || '无';
     const comment = w[7] || '';
     const avatarUrl = w[14] || '';
-    
+
+    // 正确创建图片元素
+    const img = document.createElement('img');
+    img.className = 'winner-avatar';
+    img.src = avatarUrl;
+    img.onerror = function() {
+      this.style.display = 'none';
+    };
+
     const card = document.createElement('div');
     card.className = 'winner-card';
-    
-    let imgHtml = '';
-    if (avatarUrl) {
-      imgHtml = `< img src="${avatarUrl}" class="winner-avatar" onerror="this.style.display='none'">`;
-    }
 
-    card.innerHTML = `
-      ${imgHtml}
-      <div>
-        <h4>🎊 第${i+1}名</h4>
-        <div class="winner-info">UID：${uid}</div>
-        <div class="winner-info">暱稱：${name}</div>
-        <div class="winner-info">${comment}</div>
-      </div>
+    const infoDiv = document.createElement('div');
+    infoDiv.innerHTML = `
+      <h4>🎊 第${i+1}名</h4>
+      <div class="winner-info">UID：${uid}</div>
+      <div class="winner-info">暱稱：${name}</div>
+      <div class="winner-info">${comment}</div>
     `;
+
+    card.appendChild(img);
+    card.appendChild(infoDiv);
     res.appendChild(card);
   });
   updateStats();
