@@ -72,6 +72,9 @@ h1 {
     flex: none;
     min-height: 500px;
   }
+  .result {
+    grid-template-columns: 1fr !important;
+  }
 }
 
 h3 {
@@ -155,12 +158,13 @@ textarea {
   display: none;
 }
 
+/* 雙列展示 */
 .result {
   background: #2a2a2a;
   padding: 10px;
   border-radius: 12px;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 8px;
   flex: 1;
   min-height: 0;
@@ -180,6 +184,7 @@ textarea {
   border-radius: 4px;
 }
 
+/* 固定橫向長條卡片 */
 .winner-card {
   background: #333;
   border-radius: 12px;
@@ -227,6 +232,7 @@ textarea {
   align-items: center;
   justify-content: center;
   height: 100%;
+  grid-column: span 2;
 }
 .stats {
   font-size: 14px;
@@ -518,7 +524,7 @@ document.getElementById('export').onclick = () => {
 };
 
 document.getElementById('clearRecord').onclick = () => {
-  if (confirm('确定清空所有已中奖记录？')) {
+  if (confirm('确定清空所有中奖记录？')) {
     wonUIDs = [];
     localStorage.removeItem('wonUIDs');
     updateStats();
