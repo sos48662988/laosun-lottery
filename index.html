@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>🌸老孫小站抽獎結果🌸</title>
-<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<script src="https://jsdelivr.net"></script>
 <style>
 * {
   box-sizing: border-box;
@@ -316,7 +316,7 @@ textarea {
         </div>
       </div>
       <div>
-        <div class="label">屏蔽词（一行一个）</div>
+        <div class="label">屏蔽词（一行一個）</div>
         <textarea id="block"></textarea>
       </div>
       <button class="btn" id="start" disabled>开始抽奖</button>
@@ -339,11 +339,10 @@ textarea {
 let rows = [];
 let winList = [];
 let head = [];
+let wonUIDs = [];
 
-let wonUIDs = []; 
-
-const PROXY_PREFIX = 'https://images.weserv.nl/?url=';
-const DEFAULT_AVATAR = 'https://picsum.photos/50/50';
+const PROXY_PREFIX = 'https://weserv.nl';
+const DEFAULT_AVATAR = 'https://picsum.photos';
 
 function calcValidCount() {
   if (rows.length === 0) return 0;
@@ -357,17 +356,23 @@ function calcValidCount() {
     const t = r.join('').toLowerCase();
     if (at === 'forbid' && t.includes('@')) return false;
     if (blocks.some(b => t.includes(b))) return false;
-    const ct = r[8] ? new Date(r[8]) : null;
+    
+    // 依據表格調整：第9欄 H欄為「评论时间」 -> 索引為 r[7]
+    const ct = r[7] ? new Date(r[7]) : null;
     if (ct && st && ct < st) return false;
     if (ct && et && ct > et) return false;
-    const uid = r[2]?.toString().trim();
+    
+    // 依據表格調整：第5欄 E欄為唯一的「用户UID」 -> 索引為 r[4]
+    const uid = r[4]?.toString().trim();
     if (uid && wonUIDs.includes(uid)) return false;
     return true;
   });
+
   if (dedupe === 'dedupe') {
     const u = new Set();
     pool = pool.filter(row => {
-      const uid = row[2];
+      // 依據表格調整：使用第5欄 E欄「用户UID」進行完全去重攔截
+      const uid = row[4];
       if (u.has(uid)) return false;
       u.add(uid);
       return true;
@@ -380,7 +385,7 @@ function updateStats() {
   const total = rows.length;
   const valid = calcValidCount();
   const won = wonUIDs.length;
-  document.getElementById('info').innerText = `总评论：${total}｜有效：${valid}｜本次已抽：${won}`;
+  document.getElementById('info').innerText = `总评论：${total} ｜有效：${valid} ｜本次已抽：${won}`;
 }
 
 document.querySelectorAll('input[name="at"], input[name="repeat"]').forEach(el => {
@@ -404,7 +409,7 @@ document.getElementById('file').onchange = e => {
   const f = new FileReader();
   f.onload = e => {
     const wb = XLSX.read(e.target.result);
-    const data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header:1 });
+    const data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1 });
     head = data[0] || [];
     rows = data.slice(1).filter(i => i && i.join('').trim());
     document.getElementById('start').disabled = false;
@@ -420,95 +425,3 @@ document.getElementById('start').onclick = () => {
   if (valid < num) { alert(`有效人数不足 ${num}`); return; }
 
   const at = document.querySelector('input[name="at"]:checked').value;
-  const dedupe = document.querySelector('input[name="repeat"]:checked').value;
-  const blocks = document.getElementById('block').value.split('\n').map(i => i.trim().toLowerCase()).filter(Boolean);
-  const st = document.getElementById('startTime').value ? new Date(document.getElementById('startTime').value) : null;
-  const et = document.getElementById('endTime').value ? new Date(document.getElementById('endTime').value) : null;
-
-  let pool = rows.filter(r => {
-    const t = r.join('').toLowerCase();
-    if (at === 'forbid' && t.includes('@')) return false;
-    if (blocks.some(b => t.includes(b))) return false;
-    const ct = r[8] ? new Date(r[8]) : null;
-    if (ct && st && ct < st) return false;
-    if (ct && et && ct > et) return false;
-    const uid = r[2]?.toString().trim();
-    if (uid && wonUIDs.includes(uid)) return false;
-    return true;
-  });
-
-  if (dedupe === 'dedupe') {
-    const u = new Set();
-    pool = pool.filter(row => {
-      const uid = row[2];
-      if (u.has(uid)) return false;
-      u.add(uid);
-      return true;
-    });
-  }
-
-  pool.sort(() => Math.random() - 0.5);
-  winList = pool.slice(0, num);
-  
-  const newWins = winList.map(w => w[2]?.toString().trim()).filter(Boolean);
-  wonUIDs = [...new Set([...wonUIDs, ...newWins])];
-
-  const res = document.getElementById('result');
-  res.innerHTML = '';
-
-  winList.forEach((w, i) => {
-    const uid = w[2] || '';
-    const name = w[4] || '无';
-    const comment = w[7] || '';
-    const rawAvatar = w[14] || '';
-
-    const card = document.createElement('div');
-    card.className = 'winner-card';
-
-    const avatarContainer = document.createElement('div');
-    avatarContainer.className = 'avatar-container';
-
-    const img = document.createElement('img');
-    img.className = 'winner-avatar';
-    if (rawAvatar) {
-      img.src = PROXY_PREFIX + encodeURIComponent(rawAvatar.trim());
-    } else {
-      img.src = DEFAULT_AVATAR;
-    }
-    img.onerror = function() { this.src = DEFAULT_AVATAR; };
-
-    const infoWrap = document.createElement('div');
-    infoWrap.className = 'winner-info-wrap';
-    infoWrap.innerHTML = `
-      <h4>🎊 第${i+1}名</h4>
-      <div class="winner-info">UID：${uid}</div>
-      <div class="winner-info">暱稱：${name}</div>
-      <div class="winner-info">${comment}</div>
-    `;
-
-    avatarContainer.appendChild(img);
-    card.appendChild(avatarContainer);
-    card.appendChild(infoWrap);
-    res.appendChild(card);
-  });
-  updateStats();
-};
-
-document.getElementById('export').onclick = () => {
-  if (!winList.length) { alert('请先抽奖'); return; }
-  const ws = XLSX.utils.aoa_to_sheet([head, ...winList]);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, '中奖名单');
-  XLSX.writeFile(wb, '老孫抽奖站_中奖名单.xlsx');
-};
-
-document.getElementById('clearRecord').onclick = () => {
-  if (confirm('确定清空本次已抽记录？')) {
-    wonUIDs = [];
-    updateStats();
-    alert('已清空');
-  }
-};
-</script>
-</body>
-</html>
