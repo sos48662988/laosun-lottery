@@ -1,514 +1,66 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🌸老孫小站抽獎結果🌸</title>
-<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-<style>
-* {
-  box-sizing: border-box;
-  font-family: "圆幼体", "微软雅黑", sans-serif;
-}
-html, body {
-  margin: 0;
-  padding: 0;
-  background: #121212;
-  color: #f5f5f5;
-  height: 100vh;
-  overflow: hidden;
-}
-.container {
-  width: 100%;
-  max-width: 1600px;
-  margin: 0 auto;
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  height: 100vh;
-}
-.title-bar {
-  text-align: center;
-  padding: 6px 0;
-}
-h1 {
-  font-size: clamp(22px, 4vw, 28px);
-  color: #fb7299;
-  margin: 0;
-}
-
-.main-content {
-  display: flex;
-  gap: 12px;
-  flex: 1;
-  min-height: 0;
-  width: 100%;
-}
-.left-card {
-  width: 320px;
-  background: #1e1e1e;
-  border-radius: 16px;
-  padding: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  overflow-y: auto;
-  color: #f5f5f5;
-}
-.left-card::-webkit-scrollbar {
-  width: 8px;
-}
-.left-card::-webkit-scrollbar-thumb {
-  background: #fb7299;
-  border-radius: 4px;
-}
-.right-card {
-  flex: 1;
-  background: #1e1e1e;
-  border-radius: 16px;
-  padding: 14px;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
-
-@media (max-width: 900px) {
-  html, body {
-    height: auto !important;
-    overflow: auto !important;
-  }
-  .container {
-    height: auto !important;
-  }
-  .main-content {
-    flex-direction: column;
-  }
-  .left-card {
-    width: 100%;
-    overflow: visible !important;
-  }
-  .right-card {
-    height: auto !important;
-    min-height: auto !important;
-  }
-  .result {
-    grid-template-columns: 1fr !important;
-    overflow: visible !important;
-  }
-}
-
-h3 {
-  font-size: 18px;
-  margin: 0 0 10px;
-  text-align: center;
-  color: #fb7299;
-}
-.label {
-  font-size: 16px;
-  margin: 8px 0 4px;
-  color: #f5f5f5;
-}
-.tip {
-  font-size: 12px;
-  color: #999;
-}
-
-input, select, textarea {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #333;
-  border-radius: 12px;
-  font-size: 14px;
-  background: #2a2a2a;
-  color: #f5f5f5;
-}
-input:focus, select:focus, textarea:focus {
-  border-color: #fb7299;
-  outline: none;
-}
-textarea {
-  height: 80px;
-  resize: none;
-}
-
-.btn, input[type="file"]::file-selector-button {
-  background: #fb7299;
-  color: white;
-  border: none;
-  padding: 12px;
-  border-radius: 12px;
-  font-size: 16px;
-  cursor: pointer;
-  text-align: center;
-  white-space: nowrap;
-}
-.btn:hover, input[type="file"]::file-selector-button:hover {
-  background: #ff85a8;
-}
-.btn:disabled {
-  background: #333;
-  color: #666;
-}
-.btn-clear {
-  background: #444 !important;
-  text-align: center;
-  color: #f5f5f5;
-}
-
-.radio-group {
-  display: flex;
-  gap: 10px;
-}
-.radio-item {
-  flex: 1;
-  text-align: center;
-  padding: 10px;
-  border: 1px solid #333;
-  border-radius: 12px;
-  background: #2a2a2a;
-  font-size: 14px;
-  color: #f5f5f5;
-}
-.radio-item.active {
-  background: #fb7299;
-  border-color: #fb7299;
-  color: white;
-}
-.radio-item input {
-  display: none;
-}
-
-.time-filter {
-  display: flex;
-  gap: 8px;
-  width: 100%;
-}
-.time-filter input {
-  flex: 1;
-  min-width: 0;
-}
-
-.result {
-  background: #2a2a2a;
-  padding: 8px;
-  border-radius: 12px;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px;
-  align-content: start;
-  overflow-y: auto;
-  flex: 1;
-  min-height: 0;
-}
-.result::-webkit-scrollbar {
-  width: 8px;
-}
-.result::-webkit-scrollbar-thumb {
-  background: #fb7299;
-  border-radius: 4px;
-}
-
-.winner-card {
-  background: #333;
-  border-radius: 12px;
-  padding: 12px;
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  width: 100%;
-  min-width: 0;
-}
-.avatar-container {
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  overflow: hidden;
-  flex-shrink: 0;
-  background: #444;
-}
-.winner-avatar {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-.winner-info-wrap {
-  flex: 1;
-  min-width: 0;
-}
-.winner-card h4 {
-  margin: 0 0 4px;
-  color: #fb7299;
-  font-size: 16px;
-  white-space: nowrap;
-}
-.winner-info {
-  font-size: 13px;
-  color: #ddd;
-  line-height: 1.4;
-  white-space: pre-wrap;
-  word-break: break-word;
-  overflow: hidden;
-}
-
-.empty-state {
-  text-align: center;
-  padding: 20px;
-  color: #888;
-  grid-column: span 2;
-}
-.stats {
-  text-align: center;
-  color: #fb7299;
-  margin-top: 8px;
-}
-
-.copyright {
-  text-align: center;
-  font-size: 12px;
-  color: #666;
-  padding: 8px 0 0;
-}
-</style>
-</head>
-<body>
-
-<div class="container">
-  <div class="title-bar">
-    <h1>🌸老孫小站抽獎結果🌸</h1>
-  </div>
-
-  <div class="main-content">
-    <div class="left-card">
-      <div>
-        <div class="label">导入表格</div>
-        <div class="tip">支持 xlsx,.xls,.csv</div>
-        <input type="file" id="file" accept=".xlsx,.xls,.csv">
-      </div>
-      <div>
-        <div class="label">中奖人数</div>
-        <select id="count">
-          <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
-          <option>6</option><option>7</option><option>8</option><option>9</option><option>10</option>
-          <option>11</option><option>12</option><option>13</option><option>14</option><option>15</option>
-          <option>16</option><option>17</option><option>18</option><option>19</option><option>20</option>
-        </select>
-      </div>
-      <div>
-        <div class="label">允许@他人</div>
-        <div class="radio-group">
-          <label class="radio-item active"><input type="radio" name="at" value="allow" checked>允许</label>
-          <label class="radio-item"><input type="radio" name="at" value="forbid">禁止</label>
-        </div>
-      </div>
-      <div>
-        <div class="label">重复处理</div>
-        <div class="radio-group">
-          <label class="radio-item active"><input type="radio" name="repeat" value="dedupe" checked>同一人去重</label>
-          <label class="radio-item"><input type="radio" name="repeat" value="keep">完全不去重</label>
-        </div>
-      </div>
-      <div>
-        <div class="label">时间筛选</div>
-        <div class="time-filter">
-          <input type="datetime-local" id="startTime">
-          <input type="datetime-local" id="endTime">
-        </div>
-      </div>
-      <div>
-        <div class="label">屏蔽词（一行一个）</div>
-        <textarea id="block"></textarea>
-      </div>
-      <button class="btn" id="start" disabled>开始抽奖</button>
-      <button class="btn" id="export">导出中奖名单</button>
-      <button class="btn btn-clear" id="clearRecord">清空已中奖记录</button>
-      <div class="stats" id="info"></div>
-    </div>
-
-    <div class="right-card">
-      <h3>🎊 中奖名单 🎊</h3>
-      <div class="result" id="result">
-        <div class="empty-state">点击「开始抽奖」</div>
-      </div>
-      <div class="copyright">最终解释权归老孫OwO所有</div>
-    </div>
-  </div>
-</div>
-
-<script>
-let rows = [];
-let winList = [];
-let head = [];
-
-let wonUIDs = []; 
-
-const PROXY_PREFIX = 'https://images.weserv.nl/?url=';
-const DEFAULT_AVATAR = 'https://picsum.photos/50/50';
-
-function calcValidCount() {
-  if (rows.length === 0) return 0;
+// 計算符合篩選條件的有效數據池（完全去重版）
+function getFilteredPool() {
+  if (rows.length === 0) return [];
   const at = document.querySelector('input[name="at"]:checked').value;
   const dedupe = document.querySelector('input[name="repeat"]:checked').value;
   const blocks = document.getElementById('block').value.split('\n').map(i => i.trim().toLowerCase()).filter(Boolean);
-  const st = document.getElementById('startTime').value ? new Date(document.getElementById('startTime').value) : null;
-  const et = document.getElementById('endTime').value ? new Date(document.getElementById('endTime').value) : null;
-
-  let pool = rows.filter(r => {
-    const t = r.join('').toLowerCase();
-    if (at === 'forbid' && t.includes('@')) return false;
-    if (blocks.some(b => t.includes(b))) return false;
-    const ct = r[8] ? new Date(r[8]) : null;
-    if (ct && st && ct < st) return false;
-    if (ct && et && ct > et) return false;
-    const uid = r[2]?.toString().trim();
-    if (uid && wonUIDs.includes(uid)) return false;
-    return true;
-  });
-  if (dedupe === 'dedupe') {
-    const u = new Set();
-    pool = pool.filter(row => {
-      const uid = row[2];
-      if (u.has(uid)) return false;
-      u.add(uid);
-      return true;
-    });
-  }
-  return pool.length;
-}
-
-function updateStats() {
-  const total = rows.length;
-  const valid = calcValidCount();
-  const won = wonUIDs.length;
-  document.getElementById('info').innerText = `总评论：${total}｜有效：${valid}｜本次已抽：${won}`;
-}
-
-document.querySelectorAll('input[name="at"], input[name="repeat"]').forEach(el => {
-  el.addEventListener('change', updateStats);
-});
-document.getElementById('block').addEventListener('input', updateStats);
-document.getElementById('startTime').addEventListener('change', updateStats);
-document.getElementById('endTime').addEventListener('change', updateStats);
-
-document.querySelectorAll('.radio-item').forEach(item => {
-  item.addEventListener('click', () => {
-    const name = item.querySelector('input').name;
-    document.querySelectorAll(`input[name="${name}"]`).forEach(i => i.parentElement.classList.remove('active'));
-    item.classList.add('active');
-    item.querySelector('input').checked = true;
-    updateStats();
-  });
-});
-
-document.getElementById('file').onchange = e => {
-  const f = new FileReader();
-  f.onload = e => {
-    const wb = XLSX.read(e.target.result);
-    const data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header:1 });
-    head = data[0] || [];
-    rows = data.slice(1).filter(i => i && i.join('').trim());
-    document.getElementById('start').disabled = false;
-    updateStats();
-    alert(`导入成功：${rows.length} 条`);
-  };
-  f.readAsArrayBuffer(e.target.files[0]);
-};
-
-document.getElementById('start').onclick = () => {
-  const num = +document.getElementById('count').value;
-  const valid = calcValidCount();
-  if (valid < num) { alert(`有效人数不足 ${num}`); return; }
-
-  const at = document.querySelector('input[name="at"]:checked').value;
-  const dedupe = document.querySelector('input[name="repeat"]:checked').value;
-  const blocks = document.getElementById('block').value.split('\n').map(i => i.trim().toLowerCase()).filter(Boolean);
-  const st = document.getElementById('startTime').value ? new Date(document.getElementById('startTime').value) : null;
-  const et = document.getElementById('endTime').value ? new Date(document.getElementById('endTime').value) : null;
-
-  let pool = rows.filter(r => {
-    const t = r.join('').toLowerCase();
-    if (at === 'forbid' && t.includes('@')) return false;
-    if (blocks.some(b => t.includes(b))) return false;
-    const ct = r[8] ? new Date(r[8]) : null;
-    if (ct && st && ct < st) return false;
-    if (ct && et && ct > et) return false;
-    const uid = r[2]?.toString().trim();
-    if (uid && wonUIDs.includes(uid)) return false;
-    return true;
-  });
-
-  if (dedupe === 'dedupe') {
-    const u = new Set();
-    pool = pool.filter(row => {
-      const uid = row[2];
-      if (u.has(uid)) return false;
-      u.add(uid);
-      return true;
-    });
-  }
-
-  pool.sort(() => Math.random() - 0.5);
-  winList = pool.slice(0, num);
   
-  const newWins = winList.map(w => w[2]?.toString().trim()).filter(Boolean);
-  wonUIDs = [...new Set([...wonUIDs, ...newWins])];
+  const stStr = document.getElementById('startTime').value;
+  const etStr = document.getElementById('endTime').value;
+  const st = stStr ? new Date(stStr).getTime() : null;
+  const et = etStr ? new Date(etStr).getTime() : null;
 
-  const res = document.getElementById('result');
-  res.innerHTML = '';
+  // 1. 基礎條件初篩（時間、屏蔽詞、@ 限制、排除歷史中獎者）
+  let pool = rows.filter(r => {
+    if (!r || r.length === 0) return false;
+    
+    // 欄位定義：r[1]暱稱, r[2]UID, r[7]評論/回覆內容, r[8]發布時間
+    const comment = (r[7] || '').toString().toLowerCase();
+    const nickname = (r[1] || '').toString().toLowerCase();
+    const fullText = comment + nickname;
 
-  winList.forEach((w, i) => {
-    const uid = w[2] || '';
-    const name = w[4] || '无';
-    const comment = w[7] || '';
-    const rawAvatar = w[14] || '';
-
-    const card = document.createElement('div');
-    card.className = 'winner-card';
-
-    const avatarContainer = document.createElement('div');
-    avatarContainer.className = 'avatar-container';
-
-    const img = document.createElement('img');
-    img.className = 'winner-avatar';
-    if (rawAvatar) {
-      img.src = PROXY_PREFIX + encodeURIComponent(rawAvatar.trim());
-    } else {
-      img.src = DEFAULT_AVATAR;
+    // 允許/禁止 @ 他人
+    if (at === 'forbid' && comment.includes('@')) return false;
+    
+    // 屏蔽詞篩選
+    if (blocks.some(b => fullText.includes(b))) return false;
+    
+    // 時間篩選
+    if (r[8]) {
+      const ct = new Date(r[8].toString().replace(/-/g, '/')).getTime();
+      if (!isNaN(ct)) {
+        if (st && ct < st) return false;
+        if (et && ct > et) return false;
+      }
     }
-    img.onerror = function() { this.src = DEFAULT_AVATAR; };
-
-    const infoWrap = document.createElement('div');
-    infoWrap.className = 'winner-info-wrap';
-    infoWrap.innerHTML = `
-      <h4>🎊 第${i+1}名</h4>
-      <div class="winner-info">UID：${uid}</div>
-      <div class="winner-info">暱稱：${name}</div>
-      <div class="winner-info">${comment}</div>
-    `;
-
-    avatarContainer.appendChild(img);
-    card.appendChild(avatarContainer);
-    card.appendChild(infoWrap);
-    res.appendChild(card);
+    
+    // 排除已中獎的 UID
+    const uid = r[2]?.toString().trim();
+    if (uid && wonUIDs.includes(uid)) return false;
+    
+    return true;
   });
-  updateStats();
-};
 
-document.getElementById('export').onclick = () => {
-  if (!winList.length) { alert('请先抽奖'); return; }
-  const ws = XLSX.utils.aoa_to_sheet([head, ...winList]);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, '中奖名单');
-  XLSX.writeFile(wb, '老孫抽奖站_中奖名单.xlsx');
-};
+  // 2. 精準去重（當勾選「同一人去重」時）
+  if (dedupe === 'dedupe') {
+    const seenUsers = new Set();
+    pool = pool.filter(row => {
+      // 優先使用 UID 去重，若無 UID 則 fallback 到暱稱
+      const uid = row[2]?.toString().trim();
+      const nickname = row[1]?.toString().trim();
+      const userKey = uid || nickname; 
 
-document.getElementById('clearRecord').onclick = () => {
-  if (confirm('确定清空本次已抽记录？')) {
-    wonUIDs = [];
-    updateStats();
-    alert('已清空');
+      if (!userKey) return false; // 剔除無效數據
+
+      // 如果這個人已經在 Set 裡面了，直接過濾掉（不論他是評論還是回覆）
+      if (seenUsers.has(userKey)) {
+        return false;
+      }
+      
+      seenUsers.add(userKey);
+      return true;
+    });
   }
-};
-</script>
-</body>
-</html>
+  
+  return pool;
+}
