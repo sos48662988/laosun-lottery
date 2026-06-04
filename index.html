@@ -1,66 +1,37 @@
-// 計算符合篩選條件的有效數據池（完全去重版）
-function getFilteredPool() {
-  if (rows.length === 0) return [];
+function calcValidCount() {
+  if (rows.length === 0) return 0;
   const at = document.querySelector('input[name="at"]:checked').value;
   const dedupe = document.querySelector('input[name="repeat"]:checked').value;
   const blocks = document.getElementById('block').value.split('\n').map(i => i.trim().toLowerCase()).filter(Boolean);
-  
-  const stStr = document.getElementById('startTime').value;
-  const etStr = document.getElementById('endTime').value;
-  const st = stStr ? new Date(stStr).getTime() : null;
-  const et = etStr ? new Date(etStr).getTime() : null;
+  const st = document.getElementById('startTime').value ? new Date(document.getElementById('startTime').value) : null;
+  const et = document.getElementById('endTime').value ? new Date(document.getElementById('endTime').value) : null;
 
-  // 1. 基礎條件初篩（時間、屏蔽詞、@ 限制、排除歷史中獎者）
   let pool = rows.filter(r => {
-    if (!r || r.length === 0) return false;
-    
-    // 欄位定義：r[1]暱稱, r[2]UID, r[7]評論/回覆內容, r[8]發布時間
-    const comment = (r[7] || '').toString().toLowerCase();
-    const nickname = (r[1] || '').toString().toLowerCase();
-    const fullText = comment + nickname;
-
-    // 允許/禁止 @ 他人
-    if (at === 'forbid' && comment.includes('@')) return false;
-    
-    // 屏蔽詞篩選
-    if (blocks.some(b => fullText.includes(b))) return false;
-    
-    // 時間篩選
-    if (r[8]) {
-      const ct = new Date(r[8].toString().replace(/-/g, '/')).getTime();
-      if (!isNaN(ct)) {
-        if (st && ct < st) return false;
-        if (et && ct > et) return false;
-      }
-    }
-    
-    // 排除已中獎的 UID
+    const t = r.join('').toLowerCase();
+    if (at === 'forbid' && t.includes('@')) return false;
+    if (blocks.some(b => t.includes(b))) return false;
+    const ct = r[8] ? new Date(r[8]) : null;
+    if (ct && st && ct < st) return false;
+    if (ct && et && ct > et) return false;
     const uid = r[2]?.toString().trim();
     if (uid && wonUIDs.includes(uid)) return false;
-    
     return true;
   });
-
-  // 2. 精準去重（當勾選「同一人去重」時）
   if (dedupe === 'dedupe') {
-    const seenUsers = new Set();
+    const u = new Set();
     pool = pool.filter(row => {
-      // 優先使用 UID 去重，若無 UID 則 fallback 到暱稱
-      const uid = row[2]?.toString().trim();
-      const nickname = row[1]?.toString().trim();
-      const userKey = uid || nickname; 
-
-      if (!userKey) return false; // 剔除無效數據
-
-      // 如果這個人已經在 Set 裡面了，直接過濾掉（不論他是評論還是回覆）
-      if (seenUsers.has(userKey)) {
-        return false;
-      }
-      
-      seenUsers.add(userKey);
+      const uid = row[2];
+      if (u.has(uid)) return false;
+      u.add(uid);
       return true;
     });
   }
-  
-  return pool;
+  return pool.length;
+}
+
+// 補全原代碼中断的 updateStats 函數與後續事件
+function updateStats() {
+  const total = rows.length;
+  const valid = calcValidCount();
+  document.getElementById('info').innerText = `总数据: ${total} 条 | 当前有效抽奖池: ${valid} 条`;
 }
