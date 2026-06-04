@@ -378,4 +378,45 @@ function calcValidCount() {
 
 function updateStats() {
   const total = rows.length;
-  const
+  const valid = calcValidCount();
+  document.getElementById('info').innerText = `总数据: ${total} 条 | 当前有效抽奖池: ${valid} 条`;
+}
+
+// 監聽並加載 Excel 檔案
+document.getElementById('file').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const data = new Uint8Array(e.target.result);
+    const workbook = XLSX.read(data, { type: 'array' });
+    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+    const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+    if (json.length > 0) {
+      head = json[0];
+      rows = json.slice(1);
+      document.getElementById('start').disabled = false;
+      updateStats();
+    }
+  };
+  reader.readAsArrayBuffer(file);
+});
+
+// 開始抽獎按鈕點擊事件
+document.getElementById('start').addEventListener('click', function() {
+  if (rows.length === 0) return;
+  const at = document.querySelector('input[name="at"]:checked').value;
+  const dedupe = document.querySelector('input[name="repeat"]:checked').value;
+  const blocks = document.getElementById('block').value.split('\n').map(i => i.trim().toLowerCase()).filter(Boolean);
+  const st = document.getElementById('startTime').value ? new Date(document.getElementById('startTime').value) : null;
+  const et = document.getElementById('endTime').value ? new Date(document.getElementById('endTime').value) : null;
+
+  // 使用與原函數完全相同的篩選演算法提取有效抽獎池
+  let pool = rows.filter(r => {
+    const t = r.join('').toLowerCase();
+    if (at === 'forbid' && t.includes('@')) return false;
+    if (blocks.some(b => t.includes(b))) return false;
+    const ct = r[8] ? new Date(r[8]) : null;
+    if (ct && st && ct < st) return false;
+    if (ct && et && ct > et) return false;
+    const uid = r[2]?.toString().trim();
