@@ -184,8 +184,13 @@ textarea {
   gap: 8px;
   width: 100%;
 }
-.time-filter input {
-  flex: 1;
+.time-filter > div {
+  display: flex;
+  gap:4px;
+  flex:1;
+}
+.time-filter input, .time-filter select {
+  flex:1;
   min-width: 0;
 }
 
@@ -309,10 +314,18 @@ textarea {
         </div>
       </div>
       <div>
-        <div class="label">时间筛选</div>
+        <div class="label">时间筛选｜起始日期 / 时 / 分 - 结束日期 / 时 / 分</div>
         <div class="time-filter">
-          <input type="datetime-local" id="startTime">
-          <input type="datetime-local" id="endTime">
+          <div>
+            <input type="date" id="startDate">
+            <select id="startHour"></select>
+            <select id="startMin"></select>
+          </div>
+          <div>
+            <input type="date" id="endDate">
+            <select id="endHour"></select>
+            <select id="endMin"></select>
+          </div>
         </div>
       </div>
       <div>
@@ -345,13 +358,55 @@ const MY_UID = "354363232";
 const PROXY_PREFIX = 'https://images.weserv.nl/?url=';
 const DEFAULT_AVATAR = 'https://picsum.photos/50/50';
 
+// 生成小时0~23、分钟0~59下拉
+function buildTimeSelect(){
+  const hArr = [], mArr=[];
+  for(let i=0;i<=23;i++) hArr.push(i);
+  for(let i=0;i<=59;i++) mArr.push(i);
+  const sH = ['startHour','endHour'];
+  const sM = ['startMin','endMin'];
+  sH.forEach(id=>{
+    const sel = document.getElementById(id);
+    hArr.forEach(v=>{
+      const op = document.createElement('option');
+      op.value = v; op.textContent = (v+'').padStart(2,'0');
+      sel.appendChild(op);
+    })
+  })
+  sM.forEach(id=>{
+    const sel = document.getElementById(id);
+    mArr.forEach(v=>{
+      const op = document.createElement('option');
+      op.value = v; op.textContent = (v+'').padStart(2,'0');
+      sel.appendChild(op);
+    })
+  })
+}
+buildTimeSelect();
+
+// 拼接起始、结束时间
+function getStartDate(){
+  const d = document.getElementById('startDate').value;
+  const h = document.getElementById('startHour').value;
+  const m = document.getElementById('startMin').value;
+  if(!d) return null;
+  return new Date(`${d}T${h.padStart(2,'0')}:${m.padStart(2,'0')}:00`);
+}
+function getEndDate(){
+  const d = document.getElementById('endDate').value;
+  const h = document.getElementById('endHour').value;
+  const m = document.getElementById('endMin').value;
+  if(!d) return null;
+  return new Date(`${d}T${h.padStart(2,'0')}:${m.padStart(2,'0')}:00`);
+}
+
 function calcValidCount() {
   if (rows.length === 0) return 0;
   const at = document.querySelector('input[name="at"]:checked').value;
   const dedupe = document.querySelector('input[name="repeat"]:checked').value;
   const blocks = document.getElementById('block').value.split('\n').map(i => i.trim().toLowerCase()).filter(Boolean);
-  const st = document.getElementById('startTime').value ? new Date(document.getElementById('startTime').value) : null;
-  const et = document.getElementById('endTime').value ? new Date(document.getElementById('endTime').value) : null;
+  const st = getStartDate();
+  const et = getEndDate();
 
   let pool = [...rows];
   //第一步剔除本人
@@ -393,12 +448,14 @@ function updateStats() {
   document.getElementById('info').innerText = `总评论：${total}｜有效：${valid}｜本次已抽：${won}`;
 }
 
+//全部时间控件变更刷新统计
+['startDate','startHour','startMin','endDate','endHour','endMin'].forEach(id=>{
+  document.getElementById(id).addEventListener('change',updateStats);
+})
 document.querySelectorAll('input[name="at"], input[name="repeat"]').forEach(el => {
   el.addEventListener('change', updateStats);
 });
 document.getElementById('block').addEventListener('input', updateStats);
-document.getElementById('startTime').addEventListener('change', updateStats);
-document.getElementById('endTime').addEventListener('change', updateStats);
 
 document.querySelectorAll('.radio-item').forEach(item => {
   item.addEventListener('click', () => {
@@ -432,8 +489,8 @@ document.getElementById('start').onclick = () => {
   const at = document.querySelector('input[name="at"]:checked').value;
   const dedupe = document.querySelector('input[name="repeat"]:checked').value;
   const blocks = document.getElementById('block').value.split('\n').map(i => i.trim().toLowerCase()).filter(Boolean);
-  const st = document.getElementById('startTime').value ? new Date(document.getElementById('startTime').value) : null;
-  const et = document.getElementById('endTime').value ? new Date(document.getElementById('endTime').value) : null;
+  const st = getStartDate();
+  const et = getEndDate();
 
   let pool = [...rows];
   pool = pool.filter(r => {
