@@ -353,16 +353,19 @@ function calcValidCount() {
   const et = document.getElementById('endTime').value ? new Date(document.getElementById('endTime').value) : null;
 
   let pool = rows.filter(r => {
+    // 🌟 核心過濾：若 B欄（上级评论ID，即 r[1]）有內容，代表是底下的回覆，直接剔除
+    if (r[1] && r[1].toString().trim()) return false;
+
     const t = r.join('').toLowerCase();
     if (at === 'forbid' && t.includes('@')) return false;
     if (blocks.some(b => t.includes(b))) return false;
     
-    // 依據表格調整：第9欄 H欄為「评论时间」 -> 索引為 r[7]
+    // H欄「评论时间」 -> r[7]
     const ct = r[7] ? new Date(r[7]) : null;
     if (ct && st && ct < st) return false;
     if (ct && et && ct > et) return false;
     
-    // 依據表格調整：第5欄 E欄為唯一的「用户UID」 -> 索引為 r[4]
+    // E欄「用户UID」 -> r[4]
     const uid = r[4]?.toString().trim();
     if (uid && wonUIDs.includes(uid)) return false;
     return true;
@@ -371,7 +374,7 @@ function calcValidCount() {
   if (dedupe === 'dedupe') {
     const u = new Set();
     pool = pool.filter(row => {
-      // 依據表格調整：使用第5欄 E欄「用户UID」進行完全去重攔截
+      // 用 E欄「用户UID」進行同一人去重
       const uid = row[4];
       if (u.has(uid)) return false;
       u.add(uid);
@@ -385,7 +388,7 @@ function updateStats() {
   const total = rows.length;
   const valid = calcValidCount();
   const won = wonUIDs.length;
-  document.getElementById('info').innerText = `总评论：${total} ｜有效：${valid} ｜本次已抽：${won}`;
+  document.getElementById('info').innerText = `总评论：${total} ｜有效主评：${valid} ｜本次已抽：${won}`;
 }
 
 document.querySelectorAll('input[name="at"], input[name="repeat"]').forEach(el => {
@@ -422,6 +425,3 @@ document.getElementById('file').onchange = e => {
 document.getElementById('start').onclick = () => {
   const num = +document.getElementById('count').value;
   const valid = calcValidCount();
-  if (valid < num) { alert(`有效人数不足 ${num}`); return; }
-
-  const at = document.querySelector('input[name="at"]:checked').value;
