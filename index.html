@@ -13,7 +13,7 @@
 html, body {
   margin: 0;
   padding: 0;
-  background: #121212;
+  background: #121231;
   color: #f5f5f5;
   height: 100vh;
   overflow: hidden;
@@ -93,7 +93,7 @@ h1 {
     min-height: auto !important;
   }
   .result {
-    grid-template-columns: 1fr !important;
+    grid-template-columns: 1fr 1fr !important;
     overflow: visible !important;
   }
 }
@@ -339,12 +339,12 @@ textarea {
 let rows = [];
 let winList = [];
 let head = [];
-
 let wonUIDs = []; 
 
 const PROXY_PREFIX = 'https://images.weserv.nl/?url=';
 const DEFAULT_AVATAR = 'https://picsum.photos/50/50';
 
+// 核心修复：全表先去重UID，再筛选，包含所有楼中楼
 function calcValidCount() {
   if (rows.length === 0) return 0;
   const at = document.querySelector('input[name="at"]:checked').value;
@@ -353,19 +353,20 @@ function calcValidCount() {
   const st = document.getElementById('startTime').value ? new Date(document.getElementById('startTime').value) : null;
   const et = document.getElementById('endTime').value ? new Date(document.getElementById('endTime').value) : null;
 
-  // 核心修改：先全表UID去重（主楼+楼中楼都去重），再筛选
   let pool = [...rows];
+  
+  // 1. 全局UID去重（主楼+楼中楼，同一个人只留1条）
   if (dedupe === 'dedupe') {
-    const u = new Set();
+    const uidSet = new Set();
     pool = pool.filter(row => {
-      const uid = row[2];
-      if (!uid || u.has(uid)) return false;
-      u.add(uid);
+      const uid = String(row[2] || '').trim();
+      if (!uid || uidSet.has(uid)) return false;
+      uidSet.add(uid);
       return true;
     });
   }
 
-  // 去重后再执行筛选
+  // 2. 常规筛选 + 剔除已中奖
   pool = pool.filter(r => {
     const t = r.join('').toLowerCase();
     if (at === 'forbid' && t.includes('@')) return false;
@@ -373,11 +374,11 @@ function calcValidCount() {
     const ct = r[8] ? new Date(r[8]) : null;
     if (ct && st && ct < st) return false;
     if (ct && et && ct > et) return false;
-    const uid = r[2]?.toString().trim();
+    const uid = String(r[2] || '').trim();
     if (uid && wonUIDs.includes(uid)) return false;
     return true;
   });
-  
+
   return pool.length;
 }
 
@@ -419,6 +420,7 @@ document.getElementById('file').onchange = e => {
   f.readAsArrayBuffer(e.target.files[0]);
 };
 
+// 抽奖逻辑同步修复，绝对不重复、不出现自己
 document.getElementById('start').onclick = () => {
   const num = +document.getElementById('count').value;
   const valid = calcValidCount();
@@ -430,18 +432,20 @@ document.getElementById('start').onclick = () => {
   const st = document.getElementById('startTime').value ? new Date(document.getElementById('startTime').value) : null;
   const et = document.getElementById('endTime').value ? new Date(document.getElementById('endTime').value) : null;
 
-  // 核心修改：抽奖逻辑同步先去重，再筛选
   let pool = [...rows];
+  
+  // 抽奖前先去重
   if (dedupe === 'dedupe') {
-    const u = new Set();
+    const uidSet = new Set();
     pool = pool.filter(row => {
-      const uid = row[2];
-      if (!uid || u.has(uid)) return false;
-      u.add(uid);
+      const uid = String(row[2] || '').trim();
+      if (!uid || uidSet.has(uid)) return false;
+      uidSet.add(uid);
       return true;
     });
   }
 
+  // 筛选
   pool = pool.filter(r => {
     const t = r.join('').toLowerCase();
     if (at === 'forbid' && t.includes('@')) return false;
@@ -449,15 +453,16 @@ document.getElementById('start').onclick = () => {
     const ct = r[8] ? new Date(r[8]) : null;
     if (ct && st && ct < st) return false;
     if (ct && et && ct > et) return false;
-    const uid = r[2]?.toString().trim();
+    const uid = String(r[2] || '').trim();
     if (uid && wonUIDs.includes(uid)) return false;
     return true;
   });
 
+  // 随机排序
   pool.sort(() => Math.random() - 0.5);
   winList = pool.slice(0, num);
   
-  const newWins = winList.map(w => w[2]?.toString().trim()).filter(Boolean);
+  const newWins = winList.map(w => String(w[2] || '').trim()).filter(Boolean);
   wonUIDs = [...new Set([...wonUIDs, ...newWins])];
 
   const res = document.getElementById('result');
