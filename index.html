@@ -341,6 +341,9 @@ let winList = [];
 let head = [];
 let wonUIDs = [];
 
+// 🌟 建立全域自動名稱對齊字典，預防任何索引錯位
+let colIdx = { pid: 1, uid: 4, name: 3, time: 7, comment: 6, avatar: 14 };
+
 const PROXY_PREFIX = 'https://weserv.nl';
 const DEFAULT_AVATAR = 'https://picsum.photos';
 
@@ -353,20 +356,21 @@ function calcValidCount() {
   const et = document.getElementById('endTime').value ? new Date(document.getElementById('endTime').value) : null;
 
   let pool = rows.filter(r => {
-    // 🌟 核心過濾：若 B欄（上级评论ID，即 r[1]）有內容，代表是底下的回覆，直接剔除
-    if (r[1] && r[1].toString().trim()) return false;
+    // 🌟 精準過濾回覆行：動態找尋對應的「上级评论ID」欄位
+    const parentId = r[colIdx.pid];
+    if (parentId && parentId.toString().trim() !== '' && parentId.toString().trim() !== '0') return false;
 
     const t = r.join('').toLowerCase();
     if (at === 'forbid' && t.includes('@')) return false;
     if (blocks.some(b => t.includes(b))) return false;
     
-    // H欄「评论时间」 -> r[7]
-    const ct = r[7] ? new Date(r[7]) : null;
+    // 動態找尋「评论时间」欄位
+    const ct = r[colIdx.time] ? new Date(r[colIdx.time]) : null;
     if (ct && st && ct < st) return false;
     if (ct && et && ct > et) return false;
     
-    // E欄「用户UID」 -> r[4]
-    const uid = r[4]?.toString().trim();
+    // 動態找尋「用户UID」欄位
+    const uid = r[colIdx.uid]?.toString().trim();
     if (uid && wonUIDs.includes(uid)) return false;
     return true;
   });
@@ -374,8 +378,7 @@ function calcValidCount() {
   if (dedupe === 'dedupe') {
     const u = new Set();
     pool = pool.filter(row => {
-      // 用 E欄「用户UID」進行同一人去重
-      const uid = row[4];
+      const uid = row[colIdx.uid];
       if (u.has(uid)) return false;
       u.add(uid);
       return true;
@@ -415,13 +418,8 @@ document.getElementById('file').onchange = e => {
     const data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1 });
     head = data[0] || [];
     rows = data.slice(1).filter(i => i && i.join('').trim());
-    document.getElementById('start').disabled = false;
-    updateStats();
-    alert(`导入成功：${rows.length} 条`);
-  };
-  f.readAsArrayBuffer(e.target.files[0]);
-};
 
-document.getElementById('start').onclick = () => {
-  const num = +document.getElementById('count').value;
-  const valid = calcValidCount();
+    // 🌟 在檔案導入時，動態掃描表頭，將索引自動對齊中文字，確保 100% 不錯位
+    head.forEach((hName, idx) => {
+      if (!hName) return;
+      const nameStr = hName.toString().trim();
