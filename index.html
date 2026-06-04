@@ -1,9 +1,10 @@
 let rows = [];
 let winList = [];
 let head = [];
+let wonUIDs = [];
 
-let wonUIDs = []; 
-
+// 固定你的UID，自动永久剔除
+const MY_UID = "354363232";
 const PROXY_PREFIX = 'https://images.weserv.nl/?url=';
 const DEFAULT_AVATAR = 'https://picsum.photos/50/50';
 
@@ -16,29 +17,35 @@ function calcValidCount() {
   const et = document.getElementById('endTime').value ? new Date(document.getElementById('endTime').value) : null;
 
   let pool = [...rows];
-  // 用户ID在D列：row[3]，全局UID去重
+  // 1.移除自己全部评论
+  pool = pool.filter(r => {
+    const uid = String(r[3] ?? '').trim();
+    return uid !== MY_UID;
+  });
+  // 2.全局UID去重
   if (dedupe === 'dedupe') {
-    const u = new Set();
-    pool = pool.filter(row => {
-      const uid = String(row[3] ?? '').trim();
-      if (!uid || u.has(uid)) return false;
-      u.add(uid);
+    const set = new Set();
+    pool = pool.filter(r => {
+      const uid = String(r[3] ?? '').trim();
+      if (!uid || set.has(uid)) return false;
+      set.add(uid);
       return true;
     })
   }
-
+  // 3.常规筛选
   pool = pool.filter(r => {
-    const t = r.join('').toLowerCase();
-    if (at === 'forbid' && t.includes('@')) return false;
-    if (blocks.some(b => t.includes(b))) return false;
-    const ct = r[8] ? new Date(r[8]) : null;
-    if (ct && st && ct < st) return false;
-    if (ct && et && ct > et) return false;
+    const allTxt = r.join('').toLowerCase();
+    if (at === 'forbid' && allTxt.includes('@')) return false;
+    if (blocks.some(w => allTxt.includes(w))) return false;
+    const create = r[8] ? new Date(r[8]) : null;
+    if(create){
+      if(st && create < st) return false;
+      if(et && create > et) return false;
+    }
     const uid = String(r[3] ?? '').trim();
-    if (uid && wonUIDs.includes(uid)) return false;
+    if(uid && wonUIDs.includes(uid)) return false;
     return true;
-  });
-  
+  })
   return pool.length;
 }
 
@@ -92,37 +99,43 @@ document.getElementById('start').onclick = () => {
   const et = document.getElementById('endTime').value ? new Date(document.getElementById('endTime').value) : null;
 
   let pool = [...rows];
+  // 剔除本人
+  pool = pool.filter(r => {
+    const uid = String(r[3] ?? '').trim();
+    return uid !== MY_UID;
+  });
+  // 全局去重
   if (dedupe === 'dedupe') {
-    const u = new Set();
-    pool = pool.filter(row => {
-      const uid = String(row[3] ?? '').trim();
-      if (!uid || u.has(uid)) return false;
-      u.add(uid);
+    const set = new Set();
+    pool = pool.filter(r => {
+      const uid = String(r[3] ?? '').trim();
+      if (!uid || set.has(uid)) return false;
+      set.add(uid);
       return true;
     })
   }
-
+  // 筛选
   pool = pool.filter(r => {
-    const t = r.join('').toLowerCase();
-    if (at === 'forbid' && t.includes('@')) return false;
-    if (blocks.some(b => t.includes(b))) return false;
-    const ct = r[8] ? new Date(r[8]) : null;
-    if (ct && st && ct < st) return false;
-    if (ct && et && ct > et) return false;
+    const allTxt = r.join('').toLowerCase();
+    if (at === 'forbid' && allTxt.includes('@')) return false;
+    if (blocks.some(w => allTxt.includes(w))) return false;
+    const create = r[8] ? new Date(r[8]) : null;
+    if(create){
+      if(st && create < st) return false;
+      if(et && create > et) return false;
+    }
     const uid = String(r[3] ?? '').trim();
-    if (uid && wonUIDs.includes(uid)) return false;
+    if(uid && wonUIDs.includes(uid)) return false;
     return true;
-  });
+  })
 
   pool.sort(() => Math.random() - 0.5);
   winList = pool.slice(0, num);
-  
   const newWins = winList.map(w => String(w[3] ?? '').trim()).filter(Boolean);
   wonUIDs = [...new Set([...wonUIDs, ...newWins])];
 
   const res = document.getElementById('result');
   res.innerHTML = '';
-
   winList.forEach((w, i) => {
     const uid = w[3] || '';
     const name = w[4] || '无';
@@ -131,19 +144,16 @@ document.getElementById('start').onclick = () => {
 
     const card = document.createElement('div');
     card.className = 'winner-card';
-
     const avatarContainer = document.createElement('div');
     avatarContainer.className = 'avatar-container';
-
     const img = document.createElement('img');
     img.className = 'winner-avatar';
-    if (rawAvatar) {
+    if(rawAvatar){
       img.src = PROXY_PREFIX + encodeURIComponent(rawAvatar.trim());
-    } else {
+    }else{
       img.src = DEFAULT_AVATAR;
     }
-    img.onerror = function() { this.src = DEFAULT_AVATAR; };
-
+    img.onerror = function(){this.src=DEFAULT_AVATAR;};
     const infoWrap = document.createElement('div');
     infoWrap.className = 'winner-info-wrap';
     infoWrap.innerHTML = `
@@ -152,12 +162,11 @@ document.getElementById('start').onclick = () => {
       <div class="winner-info">暱稱：${name}</div>
       <div class="winner-info">${comment}</div>
     `;
-
     avatarContainer.appendChild(img);
     card.appendChild(avatarContainer);
     card.appendChild(infoWrap);
     res.appendChild(card);
-  });
+  })
   updateStats();
 };
 
