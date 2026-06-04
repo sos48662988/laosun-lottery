@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>🌸老孫小站抽獎結果🌸</title>
-<script src="https://jsdelivr.net"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 <style>
 * {
   box-sizing: border-box;
@@ -342,8 +342,8 @@ let head = [];
 
 let wonUIDs = []; 
 
-const PROXY_PREFIX = 'https://weserv.nl';
-const DEFAULT_AVATAR = 'https://picsum.photos';
+const PROXY_PREFIX = 'https://images.weserv.nl/?url=';
+const DEFAULT_AVATAR = 'https://picsum.photos/50/50';
 
 function calcValidCount() {
   if (rows.length === 0) return 0;
@@ -360,16 +360,14 @@ function calcValidCount() {
     const ct = r[8] ? new Date(r[8]) : null;
     if (ct && st && ct < st) return false;
     if (ct && et && ct > et) return false;
-    // 這裡改為 r[4]，精準對齊您 Excel 表格的 E 欄（用户UID）
-    const uid = r[4]?.toString().trim();
+    const uid = r[2]?.toString().trim();
     if (uid && wonUIDs.includes(uid)) return false;
     return true;
   });
   if (dedupe === 'dedupe') {
     const u = new Set();
     pool = pool.filter(row => {
-      // 這裡改為 row[4]，確保不管發評論還是回覆，只要是同一個 UID 就會被 Set 去除重複
-      const uid = row[4];
+      const uid = row[2];
       if (u.has(uid)) return false;
       u.add(uid);
       return true;
@@ -380,9 +378,4 @@ function calcValidCount() {
 
 function updateStats() {
   const total = rows.length;
-  const valid = calcValidCount();
-  document.getElementById('info').innerText = `总数据: ${total} 条 | 当前有效抽奖池: ${valid} 条`;
-}
-</script>
-</body>
-</html>
+  const
