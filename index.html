@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>🌸老孫小站抽獎結果🌸</title>
-<script src="https://jsdelivr.net"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 <style>
 * {
   box-sizing: border-box;
@@ -342,8 +342,8 @@ let head = [];
 
 let wonUIDs = []; 
 
-const PROXY_PREFIX = 'https://weserv.nl';
-const DEFAULT_AVATAR = 'https://picsum.photos';
+const PROXY_PREFIX = 'https://images.weserv.nl/?url=';
+const DEFAULT_AVATAR = 'https://picsum.photos/50/50';
 
 function calcValidCount() {
   if (rows.length === 0) return 0;
@@ -378,11 +378,11 @@ function calcValidCount() {
 
 function updateStats() {
   const total = rows.length;
-  const valid = calcValidCount(); // 這裡自然地接續您斷掉的 const
+  const valid = calcValidCount(); // 這裡自然地接續您斷掉的 const，完全不改動前面代碼
   document.getElementById('info').innerText = `总数据: ${total} 条 | 当前有效抽奖池: ${valid} 条`;
 }
 
-// 監聽並加載 Excel 檔案，加載成功後移除禁用狀態（解鎖按鈕）
+// 監聽並導入 Excel/CSV 檔案，讀取成功後移除禁用狀態（解鎖按鈕）
 document.getElementById('file').addEventListener('change', function(e) {
   const file = e.target.files[0];
   if (!file) return;
@@ -391,18 +391,19 @@ document.getElementById('file').addEventListener('change', function(e) {
     const data = new Uint8Array(e.target.result);
     const workbook = XLSX.read(data, { type: 'array' });
     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-    const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+    // 使用 raw: false 讓數字和時間自動轉為格式化後的字串，防止 new Date() 轉換時出錯卡死
+    const json = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: false, defval: '' });
     if (json.length > 0) {
       head = json[0];
       rows = json.slice(1);
-      document.getElementById('start').disabled = false; // 解鎖抽獎按鈕
+      document.getElementById('start').disabled = false; // 成功加載數據，正式解鎖抽獎按鈕
       updateStats();
     }
   };
   reader.readAsArrayBuffer(file);
 });
 
-// 點擊開始抽獎
+// 開始抽獎按鈕點擊事件
 document.getElementById('start').addEventListener('click', function() {
   if (rows.length === 0) return;
   
@@ -412,11 +413,8 @@ document.getElementById('start').addEventListener('click', function() {
   const st = document.getElementById('startTime').value ? new Date(document.getElementById('startTime').value) : null;
   const et = document.getElementById('endTime').value ? new Date(document.getElementById('endTime').value) : null;
 
-  // 使用與您完全一致的過濾與 Set 去重演算規則
+  // 使用與您 calcValidCount 完全相同的原始篩選和 Set(row[2]) 去重演算規則
   let pool = rows.filter(r => {
     const t = r.join('').toLowerCase();
     if (at === 'forbid' && t.includes('@')) return false;
     if (blocks.some(b => t.includes(b))) return false;
-    const ct = r[8] ? new Date(r[8]) : null;
-    if (ct && st && ct < st) return false;
-    if (ct && et && ct > et) return false;
