@@ -1,9 +1,346 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌸老孫小站抽獎結果🌸</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<style>
+* {
+  box-sizing: border-box;
+  font-family: "圆幼体", "微软雅黑", sans-serif;
+}
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #121212;
+  color: #f5f5f5;
+  height: 100vh;
+  overflow: hidden;
+}
+.container {
+  width: 100%;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100vh;
+}
+.title-bar {
+  text-align: center;
+  padding: 6px 0;
+}
+h1 {
+  font-size: clamp(22px, 4vw, 28px);
+  color: #fb7299;
+  margin: 0;
+}
+
+.main-content {
+  display: flex;
+  gap: 12px;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+}
+.left-card {
+  width: 320px;
+  background: #1e1e1e;
+  border-radius: 16px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+  color: #f5f5f5;
+}
+.left-card::-webkit-scrollbar {
+  width: 8px;
+}
+.left-card::-webkit-scrollbar-thumb {
+  background: #fb7299;
+  border-radius: 4px;
+}
+.right-card {
+  flex: 1;
+  background: #1e1e1e;
+  border-radius: 16px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+@media (max-width: 900px) {
+  html, body {
+    height: auto !important;
+    overflow: auto !important;
+  }
+  .container {
+    height: auto !important;
+  }
+  .main-content {
+    flex-direction: column;
+  }
+  .left-card {
+    width: 100%;
+    overflow: visible !important;
+  }
+  .right-card {
+    height: auto !important;
+    min-height: auto !important;
+  }
+  .result {
+    grid-template-columns: 1fr !important;
+    overflow: visible !important;
+  }
+}
+
+h3 {
+  font-size: 18px;
+  margin: 0 0 10px;
+  text-align: center;
+  color: #fb7299;
+}
+.label {
+  font-size: 16px;
+  margin: 8px 0 4px;
+  color: #f5f5f5;
+}
+.tip {
+  font-size: 12px;
+  color: #999;
+}
+
+input, select, textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #333;
+  border-radius: 12px;
+  font-size: 14px;
+  background: #2a2a2a;
+  color: #f5f5f5;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: #fb7299;
+  outline: none;
+}
+textarea {
+  height: 80px;
+  resize: none;
+}
+
+.btn, input[type="file"]::file-selector-button {
+  background: #fb7299;
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 12px;
+  font-size: 16px;
+  cursor: pointer;
+  text-align: center;
+  white-space: nowrap;
+}
+.btn:hover, input[type="file"]::file-selector-button:hover {
+  background: #ff85a8;
+}
+.btn:disabled {
+  background: #333;
+  color: #666;
+}
+.btn-clear {
+  background: #444 !important;
+  text-align: center;
+  color: #f5f5f5;
+}
+
+.radio-group {
+  display: flex;
+  gap: 10px;
+}
+.radio-item {
+  flex: 1;
+  text-align: center;
+  padding: 10px;
+  border: 1px solid #333;
+  border-radius: 12px;
+  background: #2a2a2a;
+  font-size: 14px;
+  color: #f5f5f5;
+}
+.radio-item.active {
+  background: #fb7299;
+  border-color: #fb7299;
+  color: white;
+}
+.radio-item input {
+  display: none;
+}
+
+.time-filter {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+.time-filter input {
+  flex: 1;
+  min-width: 0;
+}
+
+.result {
+  background: #2a2a2a;
+  padding: 8px;
+  border-radius: 12px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  align-content: start;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+.result::-webkit-scrollbar {
+  width: 8px;
+}
+.result::-webkit-scrollbar-thumb {
+  background: #fb7299;
+  border-radius: 4px;
+}
+
+.winner-card {
+  background: #333;
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+}
+.avatar-container {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: #444;
+}
+.winner-avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.winner-info-wrap {
+  flex: 1;
+  min-width: 0;
+}
+.winner-card h4 {
+  margin: 0 0 4px;
+  color: #fb7299;
+  font-size: 16px;
+  white-space: nowrap;
+}
+.winner-info {
+  font-size: 13px;
+  color: #ddd;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow: hidden;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 20px;
+  color: #888;
+  grid-column: span 2;
+}
+.stats {
+  text-align: center;
+  color: #fb7299;
+  margin-top: 8px;
+}
+
+.copyright {
+  text-align: center;
+  font-size: 12px;
+  color: #666;
+  padding: 8px 0 0;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="title-bar">
+    <h1>🌸老孫小站抽獎結果🌸</h1>
+  </div>
+
+  <div class="main-content">
+    <div class="left-card">
+      <div>
+        <div class="label">导入表格</div>
+        <div class="tip">支持 xlsx,.xls,.csv</div>
+        <input type="file" id="file" accept=".xlsx,.xls,.csv">
+      </div>
+      <div>
+        <div class="label">中奖人数</div>
+        <select id="count">
+          <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
+          <option>6</option><option>7</option><option>8</option><option>9</option><option>10</option>
+          <option>11</option><option>12</option><option>13</option><option>14</option><option>15</option>
+          <option>16</option><option>17</option><option>18</option><option>19</option><option>20</option>
+        </select>
+      </div>
+      <div>
+        <div class="label">允许@他人</div>
+        <div class="radio-group">
+          <label class="radio-item active"><input type="radio" name="at" value="allow" checked>允许</label>
+          <label class="radio-item"><input type="radio" name="at" value="forbid">禁止</label>
+        </div>
+      </div>
+      <div>
+        <div class="label">重复处理</div>
+        <div class="radio-group">
+          <label class="radio-item active"><input type="radio" name="repeat" value="dedupe" checked>同一人去重</label>
+          <label class="radio-item"><input type="radio" name="repeat" value="keep">完全不去重</label>
+        </div>
+      </div>
+      <div>
+        <div class="label">时间筛选</div>
+        <div class="time-filter">
+          <input type="datetime-local" id="startTime">
+          <input type="datetime-local" id="endTime">
+        </div>
+      </div>
+      <div>
+        <div class="label">屏蔽词（一行一个）</div>
+        <textarea id="block"></textarea>
+      </div>
+      <button class="btn" id="start" disabled>开始抽奖</button>
+      <button class="btn" id="export">导出中奖名单</button>
+      <button class="btn btn-clear" id="clearRecord">清空已中奖记录</button>
+      <div class="stats" id="info"></div>
+    </div>
+
+    <div class="right-card">
+      <h3>🎊 中奖名单 🎊</h3>
+      <div class="result" id="result">
+        <div class="empty-state">点击「开始抽奖」</div>
+      </div>
+      <div class="copyright">最终解释权归老孫OwO所有</div>
+    </div>
+  </div>
+</div>
+
+<script>
 let rows = [];
 let winList = [];
 let head = [];
 let wonUIDs = [];
 
-// 固定你的UID，自动永久剔除
 const MY_UID = "354363232";
 const PROXY_PREFIX = 'https://images.weserv.nl/?url=';
 const DEFAULT_AVATAR = 'https://picsum.photos/50/50';
@@ -17,12 +354,12 @@ function calcValidCount() {
   const et = document.getElementById('endTime').value ? new Date(document.getElementById('endTime').value) : null;
 
   let pool = [...rows];
-  // 1.移除自己全部评论
+  //第一步剔除本人
   pool = pool.filter(r => {
     const uid = String(r[3] ?? '').trim();
     return uid !== MY_UID;
   });
-  // 2.全局UID去重
+  //第二步全局UID去重
   if (dedupe === 'dedupe') {
     const set = new Set();
     pool = pool.filter(r => {
@@ -32,7 +369,7 @@ function calcValidCount() {
       return true;
     })
   }
-  // 3.常规筛选
+  //第三步筛选
   pool = pool.filter(r => {
     const allTxt = r.join('').toLowerCase();
     if (at === 'forbid' && allTxt.includes('@')) return false;
@@ -99,12 +436,11 @@ document.getElementById('start').onclick = () => {
   const et = document.getElementById('endTime').value ? new Date(document.getElementById('endTime').value) : null;
 
   let pool = [...rows];
-  // 剔除本人
   pool = pool.filter(r => {
     const uid = String(r[3] ?? '').trim();
     return uid !== MY_UID;
   });
-  // 全局去重
+
   if (dedupe === 'dedupe') {
     const set = new Set();
     pool = pool.filter(r => {
@@ -114,7 +450,7 @@ document.getElementById('start').onclick = () => {
       return true;
     })
   }
-  // 筛选
+
   pool = pool.filter(r => {
     const allTxt = r.join('').toLowerCase();
     if (at === 'forbid' && allTxt.includes('@')) return false;
@@ -185,3 +521,6 @@ document.getElementById('clearRecord').onclick = () => {
     alert('已清空');
   }
 };
+</script>
+</body>
+</html>
