@@ -315,10 +315,10 @@ textarea {
         </select>
       </div>
       <div>
-        <div class="label">楼中楼回复过滤</div>
+        <div class="label">重复处理</div>
         <div class="radio-group">
-          <label class="radio-item active"><input type="radio" name="floorFilter" value="on" checked>开启（只留一级评论）</label>
-          <label class="radio-item"><input type="radio" name="floorFilter" value="off">关闭（全评论参与）</label>
+          <label class="radio-item active"><input type="radio" name="repeat" value="dedupe" checked>同一人只留1条(推荐)</label>
+          <label class="radio-item"><input type="radio" name="repeat" value="keep">完全不去重</label>
         </div>
       </div>
       <div>
@@ -326,13 +326,6 @@ textarea {
         <div class="radio-group">
           <label class="radio-item active"><input type="radio" name="at" value="allow" checked>允许</label>
           <label class="radio-item"><input type="radio" name="at" value="forbid">禁止</label>
-        </div>
-      </div>
-      <div>
-        <div class="label">重复处理</div>
-        <div class="radio-group">
-          <label class="radio-item active"><input type="radio" name="repeat" value="dedupe" checked>同一人去重</label>
-          <label class="radio-item"><input type="radio" name="repeat" value="keep">完全不去重</label>
         </div>
       </div>
       <div>
@@ -376,19 +369,14 @@ function calcValidCount() {
   if (rows.length === 0) return 0;
   const at = document.querySelector('input[name="at"]:checked').value;
   const dedupe = document.querySelector('input[name="repeat"]:checked').value;
-  const floorFilter = document.querySelector('input[name="floorFilter"]:checked').value;
   const ownUid = document.getElementById('selfUid').value.trim();
   const blocks = document.getElementById('block').value.split('\n').map(i => i.trim().toLowerCase()).filter(Boolean);
   const st = document.getElementById('startTime').value ? new Date(document.getElementById('startTime').value) : null;
   const et = document.getElementById('endTime').value ? new Date(document.getElementById('endTime').value) : null;
 
+  // 规则：全部楼层（主楼+楼中楼全部保留，不再剔除楼中回复）
   let pool = rows.filter(r => {
-    // 剔除楼中楼
-    if(floorFilter === 'on'){
-      const parentId = r[0]?.toString().trim() || '';
-      if(parentId !== '') return false;
-    }
-    // 剔除博主本人
+    // 剔除自己账号所有评论
     const userUID = String(r[2] ?? '').trim();
     if(ownUid && userUID === ownUid) return false;
 
@@ -402,6 +390,8 @@ function calcValidCount() {
     if (uid && wonUIDs.includes(uid)) return false;
     return true;
   });
+
+  // 同一人多条留言只保留一条
   if (dedupe === 'dedupe') {
     const u = new Set();
     pool = pool.filter(row => {
@@ -421,8 +411,7 @@ function updateStats() {
   document.getElementById('info').innerText = `总评论：${total}｜有效：${valid}｜已抽中：${won}`;
 }
 
-// 监听输入变更实时统计
-document.querySelectorAll('input[name="at"], input[name="repeat"],input[name="floorFilter"]').forEach(el => {
+document.querySelectorAll('input[name="at"], input[name="repeat"]').forEach(el => {
   el.addEventListener('change', updateStats);
 });
 document.getElementById('selfUid').addEventListener('input',updateStats);
@@ -474,19 +463,13 @@ document.getElementById('start').onclick = () => {
 
   const at = document.querySelector('input[name="at"]:checked').value;
   const dedupe = document.querySelector('input[name="repeat"]:checked').value;
-  const floorFilter = document.querySelector('input[name="floorFilter"]:checked').value;
   const ownUid = document.getElementById('selfUid').value.trim();
   const blocks = document.getElementById('block').value.split('\n').map(i => i.trim().toLowerCase()).filter(Boolean);
   const st = document.getElementById('startTime').value ? new Date(document.getElementById('startTime').value) : null;
   const et = document.getElementById('endTime').value ? new Date(document.getElementById('endTime').value) : null;
 
   let pool = rows.filter(r => {
-    // 过滤楼中回复
-    if(floorFilter === 'on'){
-      const parentId = r[0]?.toString().trim() || '';
-      if(parentId !== '') return false;
-    }
-    // 过滤自己账号
+    // 全部楼层全部保留，不删楼中回复
     const userUID = String(r[2] ?? '').trim();
     if(ownUid && userUID === ownUid) return false;
 
@@ -511,7 +494,7 @@ document.getElementById('start').onclick = () => {
     });
   }
 
-  // 洗牌
+  // 随机打乱
   for (let i = pool.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [pool[i], pool[j]] = [pool[j], pool[i]];
