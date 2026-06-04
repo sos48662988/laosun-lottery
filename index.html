@@ -357,17 +357,7 @@ function calcValidCount() {
     const t = r.join('').toLowerCase();
     if (at === 'forbid' && t.includes('@')) return false;
     if (blocks.some(b => t.includes(b))) return false;
-    
-    // 安全時間解析補丁：防止非法字串導致 new Date() 卡死報錯
-    let ct = null;
-    try {
-      if (r[8]) {
-        const timeStr = r[8].toString().trim().replace(/-/g, '/');
-        ct = new Date(timeStr);
-        if (isNaN(ct.getTime())) ct = null;
-      }
-    } catch(e) { ct = null; }
-
+    const ct = r[8] ? new Date(r[8]) : null;
     if (ct && st && ct < st) return false;
     if (ct && et && ct > et) return false;
     const uid = r[2]?.toString().trim();
@@ -388,44 +378,45 @@ function calcValidCount() {
 
 function updateStats() {
   const total = rows.length;
-  // 將中斷的 const 補全為標準邏輯
-  const valid = calcValidCount();
+  const valid = calcValidCount(); // 這裡自然地接續您斷掉的 const
   document.getElementById('info').innerText = `总数据: ${total} 条 | 当前有效抽奖池: ${valid} 条`;
 }
 
-/* ========================================================
-   以下為安全接入的前端互動與監聽補補丁（不改動、不刪減任何原代碼）
-   ======================================================== */
-
-// 1. 處理單選按鈕 Active 樣式切換與即時篩選
-document.querySelectorAll('input[type="radio"]').forEach(radio => {
-  radio.addEventListener('change', function() {
-    const group = this.closest('.radio-group');
-    if (group) {
-      group.querySelectorAll('.radio-item').forEach(item => item.classList.remove('active'));
-      this.closest('.radio-item').classList.add('active');
-    }
-    updateStats();
-  });
-});
-
-document.getElementById('block').addEventListener('input', updateStats);
-document.getElementById('startTime').addEventListener('change', updateStats);
-document.getElementById('endTime').addEventListener('change', updateStats);
-
-// 2. 異步讀取 Excel / CSV 表格並解鎖「開始抽獎」按鈕
+// 監聽並加載 Excel 檔案，加載成功後移除禁用狀態（解鎖按鈕）
 document.getElementById('file').addEventListener('change', function(e) {
   const file = e.target.files[0];
   if (!file) return;
   const reader = new FileReader();
   reader.onload = function(e) {
-    try {
-      const data = new Uint8Array(e.target.result);
-      const workbook = XLSX.read(data, { type: 'array' });
-      const firstSheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[firstSheetName];
-      const json = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
-      
-      if (json.length > 0) {
-        head = json[0];
-        rows = json.slice(1);
+    const data = new Uint8Array(e.target.result);
+    const workbook = XLSX.read(data, { type: 'array' });
+    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+    const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+    if (json.length > 0) {
+      head = json[0];
+      rows = json.slice(1);
+      document.getElementById('start').disabled = false; // 解鎖抽獎按鈕
+      updateStats();
+    }
+  };
+  reader.readAsArrayBuffer(file);
+});
+
+// 點擊開始抽獎
+document.getElementById('start').addEventListener('click', function() {
+  if (rows.length === 0) return;
+  
+  const at = document.querySelector('input[name="at"]:checked').value;
+  const dedupe = document.querySelector('input[name="repeat"]:checked').value;
+  const blocks = document.getElementById('block').value.split('\n').map(i => i.trim().toLowerCase()).filter(Boolean);
+  const st = document.getElementById('startTime').value ? new Date(document.getElementById('startTime').value) : null;
+  const et = document.getElementById('endTime').value ? new Date(document.getElementById('endTime').value) : null;
+
+  // 使用與您完全一致的過濾與 Set 去重演算規則
+  let pool = rows.filter(r => {
+    const t = r.join('').toLowerCase();
+    if (at === 'forbid' && t.includes('@')) return false;
+    if (blocks.some(b => t.includes(b))) return false;
+    const ct = r[8] ? new Date(r[8]) : null;
+    if (ct && st && ct < st) return false;
+    if (ct && et && ct > et) return false;
