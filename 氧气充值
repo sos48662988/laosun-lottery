@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>氧氣語音直充｜7% 緩衝版</title>
+<style>
+:root {
+  --gold: #c9a45c;
+  --bg: #111111;
+  --panel: #191816;
+  --text: #f4ead7;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Noto Sans TC", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+#app { min-height: 100vh; }
+.hero {
+  padding: 34px 20px 28px;
+  text-align: center;
+  background: linear-gradient(135deg, #282116, #111 60%, #201a10);
+  border-bottom: 1px solid var(--gold);
+}
+.kicker { letter-spacing: .28em; color: var(--gold); font-size: 11px; }
+h1 {
+  font-family: Georgia, "Noto Serif TC", serif;
+  font-size: 34px;
+  letter-spacing: .12em;
+  color: var(--gold);
+  margin: 12px 0 8px;
+}
+.hero p { color: #d0c4ad; margin: 0; font-size: 14px; }
+.wrap {
+  width: min(920px, calc(100% - 32px));
+  margin: 26px auto 50px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(270px, .75fr);
+  gap: 18px;
+}
+.panel {
+  background: var(--panel);
+  border: 1px solid #59482b;
+  border-radius: 14px;
+  padding: 22px;
+  box-shadow: 0 10px 32px #0005;
+}
+h2 { font-size: 17px; letter-spacing: .08em; margin: 0 0 18px; color: var(--gold); }
+label { display: block; color: #d8ccb5; font-size: 13px; margin: 15px 0 7px; }
+input {
+  width: 100%;
+  padding: 12px 13px;
+  color: #fff4df;
+  background: #10100f;
+  border: 1px solid #66532f;
+  border-radius: 8px;
+  font: inherit;
+  outline: none;
+}
+input:focus { border-color: var(--gold); }
+.packages {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.package {
+  text-align: left;
+  padding: 14px 12px;
+  border: 1px solid #5d4a2b;
+  border-radius: 10px;
+  background: #121211;
+  color: var(--text);
+  cursor: pointer;
+}
+.package strong { display: block; font-size: 17px; color: var(--gold); margin-bottom: 5px; }
+.package span { font-size: 12px; color: #c6baa3; }
+.package.active {
+  background: #332817;
+  border-color: var(--gold);
+  box-shadow: inset 0 0 0 1px var(--gold);
+}
+.hint { color: #9d927f; font-size: 12px; line-height: 1.6; margin-top: 12px; }
+.summary {
+  background: #211b11;
+  border: 1px solid #8b6e39;
+  padding: 17px;
+  border-radius: 10px;
+  margin-top: 18px;
+}
+.summary .small { color: #c9b995; font-size: 12px; }
+.price { font-size: 32px; font-weight: 750; color: var(--gold); margin: 4px 0; }
+.summary .details { font-size: 13px; line-height: 1.9; color: #e3d8c2; }
+.primary {
+  width: 100%;
+  border: 0;
+  border-radius: 9px;
+  background: var(--gold);
+  color: #17130b;
+  font-weight: 750;
+  padding: 14px 16px;
+  margin-top: 16px;
+  cursor: pointer;
+}
+.primary:hover { filter: brightness(1.08); }
+.receipt {
+  border: 1px dashed #8e7447;
+  background: #11100e;
+  border-radius: 10px;
+  padding: 16px;
+  margin-top: 14px;
+}
+.receipt h3 {
+  text-align: center;
+  color: var(--gold);
+  font-size: 18px;
+  margin: 0 0 5px;
+  letter-spacing: .12em;
+}
+.receipt .sub {
+  text-align: center;
+  color: #9e927b;
+  font-size: 10px;
+  margin-bottom: 14px;
+}
+.receipt-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid #322b20;
+  font-size: 12px;
+}
+.receipt-row span:first-child { color: #a99b81; }
+.receipt-row span:last-child { text-align: right; overflow-wrap: anywhere; }
+.badge {
+  display: inline-block;
+  padding: 4px 8px;
+  color: #e9d4a3;
+  background: #3b2e19;
+  border-radius: 99px;
+  font-size: 11px;
+}
+.footer { text-align: center; color: #8f846f; font-size: 11px; padding: 0 20px 28px; }
+.notice {
+  padding: 10px 12px;
+  border-left: 2px solid var(--gold);
+  color: #b9ad96;
+  background: #201b13;
+  font-size: 12px;
+  line-height: 1.65;
+  margin-top: 16px;
+}
+@media (max-width: 720px) {
+  .wrap { grid-template-columns: 1fr; width: min(560px, calc(100% - 24px)); margin-top: 16px; }
+  .hero { padding-top: 28px; }
+  h1 { font-size: 29px; }
+  .panel { padding: 17px; }
+}
+@media print {
+  body, #app { background: white; color: #111; }
+  .hero, .panel, .summary, .receipt { background: white; color: #111; box-shadow: none; }
+  .hero p, .hint, .footer, .summary .details, label, .receipt-row span:first-child { color: #333; }
+  .no-print { display: none !important; }
+  .wrap { display: block; }
+  .panel:first-child { display: none; }
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="hero">
+    <div class="kicker">OFFICIAL TOP-UP SERVICE</div>
+    <h1>氧氣語音直充</h1>
+    <p>只需提供 ID · 官方直充 · 簡單方便</p>
+  </header>
+
+  <main class="wrap">
+    <section class="panel">
+      <h2>01 / 填寫充值資料</h2>
+
+      <label for="customer">客人稱呼（選填）</label>
+      <input id="customer" placeholder="輸入暱稱即可">
+
+      <label for="oxygenId">氧氣語音 ID</label>
+      <input id="oxygenId" placeholder="請核對 ID 是否正確" autocomplete="off">
+
+      <label>選擇鑽石方案</label>
+      <div class="packages" id="packages">
+        <button type="button" class="package" data-diamonds="6800" data-rmb="68">
+          <strong>6,800 鑽</strong><span>¥68 · NT$340</span>
+        </button>
+        <button type="button" class="package" data-diamonds="11800" data-rmb="118">
+          <strong>11,800 鑽</strong><span>¥118 · NT$590</span>
+        </button>
+        <button type="button" class="package active" data-diamonds="28800" data-rmb="288">
+          <strong>28,800 鑽</strong><span>¥288 · 起收費緩衝</span>
+        </button>
+        <button type="button" class="package" data-diamonds="38800" data-rmb="388">
+          <strong>38,800 鑽</strong><span>¥388 · 起收費緩衝</span>
+        </button>
+        <button type="button" class="package" data-diamonds="48800" data-rmb="488">
+          <strong>48,800 鑽</strong><span>¥488 · 起收費緩衝</span>
+        </button>
+        <button type="button" class="package" data-diamonds="68800" data-rmb="688">
+          <strong>68,800 鑽</strong><span>¥688 · 起收費緩衝</span>
+        </button>
+        <button type="button" class="package" data-diamonds="99800" data-rmb="998">
+          <strong>99,800 鑽</strong><span>¥998 · 起收費緩衝</span>
+        </button>
+      </div>
+
+      <label>固定價格方案</label>
+      <p class="hint">
+        7% 緩衝專用版本。人民幣換算基準 NT$5／¥1；
+        ¥288（28,800 鑽）起加上 7% 緩衝。低於 ¥288 的方案不加緩衝。
+      </p>
+
+      <div class="summary">
+        <div class="small">本次預估應付金額</div>
+        <div class="price" id="price">NT$1,541</div>
+        <div class="details" id="details">28,800 鑽 · ¥288<br>基準 NT$1,440 + 7% 緩衝</div>
+      </div>
+
+      <button type="button" class="primary" id="makeReceipt">建立收據預覽</button>
+
+      <div class="notice">
+        此頁目前是展示原型：不會真正收款、驗證付款或執行充值。
+        收到款項並完成官方充值後，才應將收據狀態標記為已完成。
+      </div>
+    </section>
+
+    <aside class="panel">
+      <h2>02 / 電子收據預覽</h2>
+
+      <div class="summary" style="margin-top:0; margin-bottom:14px">
+        <div class="small">收款帳戶資訊</div>
+        <div class="price" style="font-size:22px">確認付款</div>
+        <div class="details">
+          付款前請先與客服確認收款方式；此文字為收款提示，不代表已收到款項。
+        </div>
+      </div>
+
+      <div class="receipt" id="receipt">
+        <h3>電子收據</h3>
+        <div class="sub">OXYGEN VOICE · TOP-UP RECORD</div>
+        <div class="receipt-row"><span>收據編號</span><span id="receiptNo">待建立</span></div>
+        <div class="receipt-row"><span>建立日期</span><span id="receiptDate">—</span></div>
+        <div class="receipt-row"><span>付款人</span><span id="receiptCustomer">—</span></div>
+        <div class="receipt-row"><span>氧氣語音 ID</span><span id="receiptId">—</span></div>
+        <div class="receipt-row"><span>充值數量</span><span id="receiptDiamonds">28,800 鑽</span></div>
+        <div class="receipt-row"><span>收款金額</span><span id="receiptPrice">NT$1,541</span></div>
+        <div class="receipt-row"><span>收款提示</span><span>確認付款</span></div>
+        <div class="receipt-row"><span>狀態</span><span class="badge" id="receiptStatus">待付款／待充值</span></div>
+        <div class="receipt-row"><span>備註</span><span>一般交易紀錄</span></div>
+      </div>
+
+      <button type="button" class="primary no-print" id="printReceipt">列印／另存 PDF</button>
+      <p class="hint">
+        建立後可使用瀏覽器「列印／另存 PDF」保存收據。
+        請勿在充值完成前標示「已完成」。此為一般交易紀錄，不是統一發票。
+      </p>
+    </aside>
+  </main>
+
+  <div class="footer">黑金風格 · 氧氣語音官方直充展示頁</div>
+</div>
+
+<script>
+const packages = [...document.querySelectorAll('.package')];
+
+let selected = { diamonds: 28800, rmb: 288 };
+const fee = 0.07;
+
+function money(n) {
+  return 'NT$' + Math.round(n).toLocaleString('en-US');
+}
+
+function total() {
+  const base = selected.rmb * 5;
+  const hasFee = selected.rmb >= 288;
+  return {
+    base,
+    hasFee,
+    total: hasFee ? Math.round(base * (1 + fee)) : base
+  };
+}
+
+function refresh() {
+  const t = total();
+
+  document.getElementById('price').textContent = money(t.total);
+
+  document.getElementById('details').innerHTML =
+    `${selected.diamonds.toLocaleString('en-US')} 鑽 · ¥${selected.rmb}<br>` +
+    `基準 ${money(t.base)}${t.hasFee ? ` + ${Math.round(fee * 100)}% 緩衝` : '（未加緩衝）'}`;
+
+  document.getElementById('receiptDiamonds').textContent =
+    selected.diamonds.toLocaleString('en-US') + ' 鑽';
+
+  document.getElementById('receiptPrice').textContent = money(t.total);
+}
+
+packages.forEach(btn => {
+  btn.addEventListener('click', () => {
+    packages.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    selected = {
+      diamonds: Number(btn.dataset.diamonds),
+      rmb: Number(btn.dataset.rmb)
+    };
+
+    refresh();
+  });
+});
+
+document.getElementById('makeReceipt').addEventListener('click', () => {
+  const id = document.getElementById('oxygenId').value.trim();
+
+  if (!id) {
+    alert('請先輸入氧氣語音 ID。');
+    document.getElementById('oxygenId').focus();
+    return;
+  }
+
+  const t = total();
+  const now = new Date();
+
+  const date =
+    `${now.getFullYear()}/` +
+    `${String(now.getMonth() + 1).padStart(2, '0')}/` +
+    `${String(now.getDate()).padStart(2, '0')}`;
+
+  const stamp =
+    `${now.getFullYear()}` +
+    `${String(now.getMonth() + 1).padStart(2, '0')}` +
+    `${String(now.getDate()).padStart(2, '0')}`;
+
+  const receiptNumber =
+    `OX-${stamp}-${String(Math.floor(Math.random() * 9000) + 1000)}`;
+
+  document.getElementById('receiptNo').textContent = receiptNumber;
+  document.getElementById('receiptDate').textContent = date;
+  document.getElementById('receiptCustomer').textContent =
+    document.getElementById('customer').value.trim() || '未填寫';
+  document.getElementById('receiptId').textContent = id;
+  document.getElementById('receiptDiamonds').textContent =
+    selected.diamonds.toLocaleString('en-US') + ' 鑽';
+  document.getElementById('receiptPrice').textContent = money(t.total);
+  document.getElementById('receiptStatus').textContent = '待付款／待充值';
+});
+
+document.getElementById('printReceipt').addEventListener('click', () => {
+  window.print();
+});
+
+refresh();
+</script>
+</body>
+</html>
